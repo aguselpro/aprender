@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meet In Record</title>
+    <style>
+      :root {
+        --bg: #36393f;
+        --panel: #2f3136;
+        --sidebar: #202225;
+        --channel-hover: #40444b;
+        --accent: #5865f2;
+        --text: #ffffff;
+        --muted: #b9bbbe;
+        --border: #202225;
+        --message: #32353b;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #313338;
+        color: var(--text);
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .app { display: flex; height: 100vh; }
+      .servers { width: 88px; background: var(--sidebar); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+      .server-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #36393f; color: white; font-weight: 700; cursor: pointer; transition: 0.2s ease; border: 1px solid rgba(255,255,255,0.08); }
+      .server-icon:hover, .server-icon.active { background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 2px rgba(88,101,242,0.2); }
+      .server-icon.team { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+      .sidebar { width: 240px; background: #2f3136; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+      .server-name { padding: 16px; font-weight: 700; border-bottom: 1px solid var(--border); }
+      .channels { flex: 1; padding: 12px; overflow: auto; }
+      .group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin: 10px 0 6px; padding: 0 8px; }
+      .channel { width: 100%; border: none; background: transparent; color: var(--muted); text-align: left; padding: 8px 10px; border-radius: 5px; font-size: 15px; cursor: pointer; margin-bottom: 2px; }
+      .channel:hover, .channel.active { background: var(--channel-hover); color: white; }
+
+      .team-card { margin: 12px; padding: 12px; border-radius: 8px; background: #202225; border: 1px solid rgba(255,255,255,0.06); }
+      .team-card h4 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; color: var(--muted); }
+      .team-code { display: inline-block; margin-top: 6px; padding: 8px 10px; border-radius: 6px; background: #36393f; color: #8ea1ff; font-weight: 700; letter-spacing: 0.5px; }
+      .copy-btn { margin-top: 8px; border: none; border-radius: 6px; padding: 7px 10px; background: var(--accent); color: white; cursor: pointer; font-size: 12px; }
+
+      .user-card { padding: 10px 12px; border-top: 1px solid var(--border); background: #292b2f; display: flex; align-items: center; justify-content: space-between; }
+      .user-info { display: flex; align-items: center; gap: 8px; }
+      .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #f56565, #38b2ac); display: grid; place-items: center; font-weight: 700; color: white; }
+      .user-name { font-size: 14px; font-weight: 600; }
+      .user-status { font-size: 12px; color: var(--muted); }
+      .controls { display: flex; gap: 6px; }
+      .control-btn { border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+
+      .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+      .topbar { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+      .channel-title { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+      .topbar-actions { color: var(--muted); font-size: 14px; }
+      .content { display: flex; flex: 1; min-height: 0; }
+
+      .messages { flex: 1; padding: 18px 20px 12px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+      .message-list { overflow: auto; padding-right: 6px; }
+      .message { display: flex; gap: 12px; padding: 8px 0; }
+      .message:hover { background: rgba(255,255,255,0.02); border-radius: 8px; }
+      .message-body { background: var(--message); border-radius: 8px; padding: 10px 12px; max-width: 700px; }
+      .meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+      .meta strong { color: white; }
+      .meta span { color: var(--muted); font-size: 12px; }
+      .composer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+      .composer-box { display: flex; align-items: center; gap: 10px; background: #40444b; border: 1px solid #202225; border-radius: 8px; padding: 10px 12px; }
+      .composer-box input { flex: 1; border: none; outline: none; background: transparent; color: var(--text); font-size: 15px; }
+
+      .member-panel { width: 240px; background: #2f3136; border-left: 1px solid var(--border); padding: 14px; }
+      .panel-title { font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+      .member { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--muted); font-size: 14px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #43b581; }
+      .voice-card { margin-top: 16px; background: #202225; border-radius: 8px; padding: 12px; color: var(--muted); }
+      .voice-card strong { display: block; color: white; margin-bottom: 6px; }
+      .pill { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 999px; background: rgba(88, 101, 242, 0.2); color: #8ea1ff; font-size: 12px; }
+
+      .teams-view { display: flex; flex-direction: column; gap: 16px; padding: 16px; width: 100%; }
+      .teams-toolbar { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+      .search-box { display: flex; align-items: center; gap: 8px; background: #40444b; padding: 8px 12px; border-radius: 8px; min-width: 280px; }
+      .search-box input { border: none; outline: none; background: transparent; color: white; width: 100%; }
+      .action-btn { border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; color: white; }
+      .action-btn.primary { background: var(--accent); }
+      .action-btn.secondary { background: #40444b; }
+      .teams-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; flex: 1; min-height: 0; }
+      .categories-panel, .teams-panel { background: #2f3136; border-radius: 10px; padding: 12px; overflow: auto; }
+      .category-item { width: 100%; border: none; background: transparent; color: var(--muted); text-align: left; padding: 10px; border-radius: 8px; margin-bottom: 6px; cursor: pointer; }
+      .category-item.active, .category-item:hover { background: #40444b; color: white; }
+      .category-item .name { display: block; font-weight: 600; }
+      .category-item .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+      .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+      .team-card-item { background: #202225; border-radius: 8px; padding: 12px; border: 1px solid rgba(255,255,255,0.06); }
+      .team-card-item h4 { margin: 0 0 6px; font-size: 16px; }
+      .team-card-item p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+      .team-pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(88, 101, 242, 0.2); color: #8ea1ff; font-size: 12px; }
+      .team-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+      .join-btn, .share-btn { border: none; border-radius: 6px; padding: 8px 10px; cursor: pointer; color: white; font-size: 13px; }
+      .join-btn { background: var(--accent); }
+      .share-btn { background: #43b581; }
+      .empty-state { color: var(--muted); padding: 20px; text-align: center; }
+
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 20; }
+      .modal-backdrop.show { display: flex; }
+      .welcome-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 25; padding: 20px; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; }
+      .welcome-backdrop.show { display: flex; pointer-events: auto; opacity: 1; }
+      .welcome-card { width: min(520px, 100%); background: #2d3136; border-radius: 18px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.08); }
+      .welcome-card h2 { margin: 0 0 10px; font-size: 24px; }
+      .welcome-card p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
+      .welcome-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+      .welcome-field label { color: var(--muted); font-size: 13px; }
+      .welcome-input { width: 100%; border: 1px solid #2f3136; border-radius: 10px; padding: 12px 14px; background: #2b2d31; color: white; }
+      .welcome-button { width: 100%; border: none; border-radius: 10px; padding: 12px; background: var(--accent); color: white; cursor: pointer; font-size: 15px; }
+      .modal { width: min(420px, 90vw); background: #2f3136; border-radius: 10px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+      .modal h3 { margin: 0 0 8px; }
+      .modal input, .modal textarea { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #202225; background: #40444b; color: white; margin-top: 10px; }
+      .modal textarea { min-height: 90px; resize: vertical; }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+      .modal-actions button { border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+      .modal-actions .primary { background: var(--accent); color: white; }
+      .modal-actions .secondary { background: #40444b; color: white; }
+      .notice { color: #ff9c9c; font-size: 13px; margin-top: 8px; }
+
+      @media (max-width: 1000px) { .member-panel { display: none; } .teams-layout { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="servers" id="server-list"></aside>
+
+      <aside class="sidebar" id="sidebar-panel">
+        <div class="server-name" id="server-name"></div>
+        <div class="channels" id="channel-list"></div>
+        <div id="team-card-area"></div>
+
+        <div class="user-card">
+          <div class="user-info">
+            <div class="avatar">R</div>
+            <div>
+              <div class="user-name">Roberto</div>
+              <div class="user-status">En línea</div>
+            </div>
+          </div>
+          <div class="controls">
+            <button class="control-btn" id="mic-btn" title="Micrófono">🎤</button>
+            <button class="control-btn" title="Audio">🔊</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="channel-title" id="current-channel"></div>
+          <div class="topbar-actions" id="topbar-text"></div>
+        </header>
+
+        <div class="content" id="content-area"></div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="create-modal">
+      <div class="modal">
+        <h3 id="modal-title">Crear un nuevo servidor</h3>
+        <p id="modal-description">Escribe el nombre del servidor que quieres crear.</p>
+        <input id="modal-input" type="text" placeholder="Tu nombre" />
+        <input id="modal-input-2" type="number" placeholder="Edad" style="display:none" />
+        <input id="modal-input-3" type="date" placeholder="Fecha de nacimiento" style="display:none" />
+        <textarea id="modal-textarea" placeholder="Descripción del team" style="display:none"></textarea>
+        <div class="notice" id="modal-notice"></div>
+        <div class="modal-actions">
+          <button class="secondary" id="cancel-create">Cancelar</button>
+          <button class="primary" id="confirm-create">Crear</button>
+        </div>
+      </div>
+    </div>
+    <div class="welcome-backdrop" id="welcome-screen">
+      <div class="welcome-card">
+        <h2>¡Bienvenido a Meet In Record!</h2>
+        <p>Antes de entrar, dime cómo quieres que te llamen, cuántos años tienes y tu fecha de nacimiento.</p>
+        <form id="welcome-form" onsubmit="completeWelcome(event)">
+          <div class="welcome-field">
+            <label for="welcome-name">¿Cómo quieres que te llamen?</label>
+            <input id="welcome-name" class="welcome-input" type="text" placeholder="Tu nombre" />
+          </div>
+          <div class="welcome-field">
+            <label for="welcome-age">¿Cuántos años tienes?</label>
+            <input id="welcome-age" class="welcome-input" type="number" placeholder="Edad" min="1" />
+          </div>
+          <div class="welcome-field">
+            <label for="welcome-birthdate">Fecha de nacimiento</label>
+            <input id="welcome-birthdate" class="welcome-input" type="date" />
+          </div>
+          <div class="welcome-field">
+            <label for="welcome-photo">Foto de perfil (opcional)</label>
+            <input id="welcome-photo" class="welcome-input" type="file" accept="image/*" />
+          </div>
+          <button type="submit" class="welcome-button" id="welcome-start">Continuar</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics-compat.js"></script>
+    <script>
+      const initialServers = [
+        {
+          id: "d",
+          label: "D",
+          name: "Mi servidor",
+          title: "# general",
+          channels: ["# general", "# diseño", "# desarrollo"],
+          members: ["Tú"],
+          messages: [
+            { user: "Sistema", time: "10:42", text: "Hola, bienvenido al servidor principal." },
+            { user: "Sistema", time: "10:43", text: "Usa el panel de la izquierda para navegar." }
+          ]
+        },
+        {
+          id: "g",
+          label: "G",
+          name: "Grupo de diseño",
+          title: "# diseño",
+          channels: ["# diseño", "# recursos", "# feedback"],
+          members: ["Tú"],
+          messages: [
+            { user: "Sistema", time: "09:30", text: "Bienvenido al grupo de diseño." },
+            { user: "Sistema", time: "09:35", text: "Aquí podrás organizar tus ideas." }
+          ]
+        }
+      ];
+
+      const initialCategories = [
+        {
+          id: "cat-minecraft",
+          name: "Minecraft",
+          teams: [
+            { id: "team-survival", name: "Survival", description: "Exploración, minería y construcción", members: ["Tú"], code: "MINE-7K2P9A", createdByMe: true, joined: true },
+            { id: "team-builders", name: "Builders", description: "Construcción avanzada y diseño", members: [], code: "MINE-4Q1Z2T", createdByMe: false, joined: false }
+          ]
+        },
+        {
+          id: "cat-fortnite",
+          name: "Fortnite",
+          teams: [{ id: "team-squad", name: "Squad Arena", description: "Partidas en equipo y estrategias", members: [], code: "FORT-8M3C1L", createdByMe: false, joined: false }]
+        }
+      ];
+
+      const defaultState = {
+        mode: "servers",
+        servers: [...initialServers],
+        selectedServerId: "d",
+        categories: initialCategories,
+        selectedCategoryId: initialCategories[0].id,
+        categorySearch: "",
+        peopleSearch: "",
+        modalType: "server",
+        userProfile: null,
+        registeredUsers: [],
+        peopleCallActiveIds: []
+      };
+
+      let state = { ...defaultState };
+
+      const serverListEl = document.getElementById("server-list");
+      const contentAreaEl = document.getElementById("content-area");
+      const sidebarPanelEl = document.getElementById("sidebar-panel");
+      const channelListEl = document.getElementById("channel-list");
+      const teamCardAreaEl = document.getElementById("team-card-area");
+      const serverNameEl = document.getElementById("server-name");
+      const currentChannelEl = document.getElementById("current-channel");
+      const topbarTextEl = document.getElementById("topbar-text");
+      const modalEl = document.getElementById("create-modal");
+      const modalTitleEl = document.getElementById("modal-title");
+      const modalDescriptionEl = document.getElementById("modal-description");
+      const modalInputEl = document.getElementById("modal-input");
+      const modalInput2El = document.getElementById("modal-input-2");
+      const modalInput3El = document.getElementById("modal-input-3");
+      const modalTextareaEl = document.getElementById("modal-textarea");
+      const modalNoticeEl = document.getElementById("modal-notice");
+      const confirmCreateBtn = document.getElementById("confirm-create");
+      const cancelCreateBtn = document.getElementById("cancel-create");
+      const welcomeScreenEl = document.getElementById("welcome-screen");
+      const welcomeFormEl = document.getElementById("welcome-form");
+      const welcomeNameEl = document.getElementById("welcome-name");
+      const welcomeAgeEl = document.getElementById("welcome-age");
+      const welcomeBirthdateEl = document.getElementById("welcome-birthdate");
+      const welcomePhotoEl = document.getElementById("welcome-photo");
+      const welcomeStartBtn = document.getElementById("welcome-start");
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAFtouLuWscwR_cypYZoaqQvFWux84J9PA",
+        authDomain: "meet-in-record.firebaseapp.com",
+        projectId: "meet-in-record",
+        storageBucket: "meet-in-record.firebasestorage.app",
+        messagingSenderId: "883645565107",
+        appId: "1:883645565107:web:7efc9634c77760b5a6c8c6",
+        measurementId: "G-M1BQ4P22K4"
+      };
+
+      const storageKey = "meet-in-record-state-v1";
+      const profileKey = "meet-in-record-profile";
+      let firestore = null;
+      let appStateRef = null;
+      let firebaseAvailable = false;
+      const userAvatarEl = document.querySelector(".user-card .avatar");
+      const userNameStaticEl = document.querySelector(".user-card .user-name");
+      const userStatusEl = document.querySelector(".user-card .user-status");
+      const micButtonEl = document.getElementById("mic-btn");
+      const configuration = {
+        iceServers: [
+          {
+            urls: [
+              "stun:stun1.l.google.com:19302",
+              "stun:stun2.l.google.com:19302",
+            ],
+          },
+        ],
+        iceCandidatePoolSize: 10,
+      };
+      let peerConnection = null;
+      let localStream = null;
+      let remoteStream = null;
+      try {
+        if (typeof firebase !== "undefined") {
+          firebase.initializeApp(firebaseConfig);
+          firebase.analytics();
+          firestore = firebase.firestore();
+          appStateRef = firestore.collection("appData").doc("main");
+          firebaseAvailable = true;
+        }
+      } catch (error) {
+        console.warn("Firebase no disponible, usando modo local.", error);
+      }
+
+      function saveStateToFirebase() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        } catch (error) {
+          console.warn("No se pudo guardar localmente", error);
+        }
+
+        if (!firebaseAvailable || !appStateRef) return;
+
+        appStateRef.set({
+          ...state,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(() => {});
+      }
+
+      function loadStateFromFirebase() {
+        let localProfile = null;
+        try {
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            state = {
+              ...defaultState,
+              ...parsed,
+              servers: parsed.servers || defaultState.servers,
+              categories: parsed.categories || defaultState.categories
+            };
+          }
+
+          const savedProfile = localStorage.getItem(profileKey);
+          if (savedProfile) {
+            localProfile = JSON.parse(savedProfile);
+            state.userProfile = localProfile;
+            if (localProfile.id && !state.registeredUsers.some((user) => user.id === localProfile.id)) {
+              state.registeredUsers.push(localProfile);
+            }
+          }
+        } catch (error) {
+          console.warn("No se pudo cargar el estado guardado", error);
+        }
+
+        render();
+        if (!state.userProfile) {
+          showWelcome();
+        } else {
+          hideWelcome();
+        }
+
+        if (!firebaseAvailable || !appStateRef) {
+          return;
+        }
+
+        appStateRef.onSnapshot((snapshot) => {
+          if (snapshot.exists) {
+            const data = snapshot.data();
+            const savedProfile = localStorage.getItem(profileKey);
+            const localProfile = savedProfile ? JSON.parse(savedProfile) : null;
+            state = {
+              ...defaultState,
+              ...data,
+              servers: data.servers || defaultState.servers,
+              categories: data.categories || defaultState.categories,
+              userProfile: localProfile || data.userProfile || null
+            };
+            render();
+            if (!state.userProfile) {
+              showWelcome();
+            } else {
+              hideWelcome();
+            }
+          } else {
+            saveStateToFirebase();
+            render();
+            if (!state.userProfile) {
+              showWelcome();
+            } else {
+              hideWelcome();
+            }
+          }
+        }, () => {
+          if (state.userProfile) render();
+        });
+      }
+
+      function showWelcome() {
+        welcomeScreenEl.classList.add("show");
+        welcomeScreenEl.style.display = "flex";
+        welcomeNameEl.focus();
+      }
+
+      function hideWelcome() {
+        welcomeScreenEl.classList.remove("show");
+        welcomeScreenEl.style.display = "none";
+      }
+
+      function resetProfile() {
+        state.userProfile = null;
+        try {
+          localStorage.removeItem(profileKey);
+        } catch (error) {
+          console.warn("No se pudo borrar el perfil", error);
+        }
+        showWelcome();
+        render();
+      }
+
+      function displayName(name) {
+        if (name === "Tú" && state.userProfile?.name) {
+          return state.userProfile.name;
+        }
+        return name;
+      }
+
+      function updateUserCard() {
+        if (!userAvatarEl || !userNameStaticEl || !userStatusEl) return;
+        if (state.userProfile) {
+          userNameStaticEl.textContent = state.userProfile.name;
+          userStatusEl.textContent = `Edad ${state.userProfile.age}`;
+          if (state.userProfile.photo) {
+            userAvatarEl.style.backgroundImage = `url(${state.userProfile.photo})`;
+            userAvatarEl.style.backgroundSize = "cover";
+            userAvatarEl.textContent = "";
+          } else {
+            userAvatarEl.style.backgroundImage = "";
+            userAvatarEl.textContent = state.userProfile.name.charAt(0).toUpperCase();
+          }
+        } else {
+          userNameStaticEl.textContent = "Invitado";
+          userStatusEl.textContent = "Sin sesión";
+          userAvatarEl.style.backgroundImage = "";
+          userAvatarEl.textContent = "U";
+        }
+      }
+
+      function saveProfile(profile) {
+        if (!profile.id) {
+          profile.id = `user-${Date.now()}`;
+        }
+        state.userProfile = profile;
+        const existingIndex = state.registeredUsers.findIndex((user) => user.id === profile.id);
+        if (existingIndex === -1) {
+          state.registeredUsers.push(profile);
+        } else {
+          state.registeredUsers[existingIndex] = profile;
+        }
+        try {
+          localStorage.setItem(profileKey, JSON.stringify(profile));
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        } catch (error) {
+          console.warn("No se pudo guardar el perfil", error);
+        }
+        saveStateToFirebase();
+      }
+
+      function togglePersonCall(userId) {
+        const index = state.peopleCallActiveIds.indexOf(userId);
+        if (index === -1) {
+          state.peopleCallActiveIds.push(userId);
+        } else {
+          state.peopleCallActiveIds.splice(index, 1);
+        }
+        saveStateToFirebase();
+        render();
+      }
+
+      async function openUserMedia() {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false
+          });
+          console.log("Micrófono activado");
+          if (userStatusEl) {
+            userStatusEl.textContent = "Micrófono activado";
+          }
+          if (micButtonEl) {
+            micButtonEl.style.color = "#43b581";
+          }
+          // Optionally initialize PeerConnection for future voice features
+          peerConnection = new RTCPeerConnection(configuration);
+          localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+        } catch (error) {
+          console.error("No se pudo activar el micrófono", error);
+          window.alert("No se pudo activar el micrófono. Revisa permisos de audio.");
+        }
+      }
+
+      function logoff() {
+        state.userProfile = null;
+        try {
+          localStorage.removeItem(profileKey);
+        } catch (error) {
+          console.warn("No se pudo borrar el perfil", error);
+        }
+        saveStateToFirebase();
+        showWelcome();
+        render();
+      }
+
+      function completeWelcome(event) {
+        if (event) event.preventDefault();
+        const name = welcomeNameEl.value.trim();
+        const age = Number(welcomeAgeEl.value);
+        const birthdate = welcomeBirthdateEl.value;
+        const photoFile = welcomePhotoEl.files && welcomePhotoEl.files[0];
+
+        if (!name) {
+          window.alert("Por favor escribe tu nombre.");
+          return;
+        }
+        if (!age || age <= 0) {
+          window.alert("Por favor escribe tu edad correcta.");
+          return;
+        }
+        if (!birthdate) {
+          window.alert("Por favor selecciona tu fecha de nacimiento.");
+          return;
+        }
+
+        const profile = { id: `user-${Date.now()}`, name, age, birthdate };
+        const finishRegistration = () => {
+          saveProfile(profile);
+          state.mode = "servers";
+          state.selectedServerId = state.selectedServerId || state.servers[0]?.id;
+          hideWelcome();
+          render();
+        };
+
+        if (photoFile) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            profile.photo = event.target.result;
+            finishRegistration();
+          };
+          reader.readAsDataURL(photoFile);
+        } else {
+          finishRegistration();
+        }
+      }
+
+      if (welcomeFormEl) {
+        welcomeFormEl.addEventListener("submit", (event) => {
+          event.preventDefault();
+          completeWelcome();
+        });
+      }
+
+      if (welcomeStartBtn) {
+        welcomeStartBtn.addEventListener("click", completeWelcome);
+      }
+
+      if (micButtonEl) {
+        micButtonEl.addEventListener("click", openUserMedia);
+      }
+
+      document.body.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-person-id]");
+        if (!button) return;
+        const userId = button.getAttribute("data-person-id");
+        if (!userId) return;
+        togglePersonCall(userId);
+      });
+
+      function renderServerButtons() {
+        const buttonsHtml = state.servers.map((server) => {
+          const isActive = state.mode === "servers" && server.id === state.selectedServerId;
+          return `<button class="server-icon${isActive ? " active" : ""}" data-server-id="${server.id}" title="${server.name}">${server.label}</button>`;
+        }).join("");
+
+        serverListEl.innerHTML = `${buttonsHtml}<button class="server-icon${state.mode === "people" ? " active" : ""}" id="people-btn" title="Personas">P</button><button class="server-icon${state.mode === "teams" ? " active team" : " team"}" id="teams-btn" title="Teams">T</button><button class="server-icon" id="create-server-btn" title="Crear servidor">+</button>`;
+      }
+
+      function renderServerView() {
+        const server = state.servers.find((item) => item.id === state.selectedServerId);
+        if (!server) return;
+
+        sidebarPanelEl.style.display = "flex";
+        serverNameEl.textContent = server.name;
+        currentChannelEl.textContent = server.title;
+        topbarTextEl.innerHTML = `Bienvenido, ${state.userProfile?.name || "invitado"} <button class="action-btn secondary" data-action="change-profile">Cambiar perfil</button> <button class="action-btn secondary" data-action="logoff">Cerrar sesión</button>`;
+
+        channelListEl.innerHTML = `
+          <div class="group-title">Canales de texto</div>
+          ${server.channels.map((channel) => `<button class="channel active">${channel}</button>`).join("")}
+          <div class="group-title">Canales de voz</div>
+          <button class="channel">🔊 Sala principal</button>
+          <button class="channel">🎮 Gaming</button>
+        `;
+
+        teamCardAreaEl.innerHTML = "";
+
+        contentAreaEl.innerHTML = `
+          <section class="messages">
+            <div class="message-list">
+              ${server.messages.map((message) => `
+                <div class="message">
+                  <div class="avatar">${displayName(message.user).charAt(0).toUpperCase()}</div>
+                  <div class="message-body">
+                    <div class="meta">
+                      <strong>${displayName(message.user)}</strong>
+                      <span>${message.time}</span>
+                    </div>
+                    <div>${message.text}</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+            <div class="composer">
+              <div class="composer-box">
+                <span>💬</span>
+                <input id="message-input" type="text" placeholder="Escribe un mensaje en ${server.title}" />
+              </div>
+            </div>
+          </section>
+          <aside class="member-panel">
+            <div class="panel-title">En línea (${server.members.length})</div>
+            ${server.members.map((member) => `<div class="member"><span class="dot"></span> ${displayName(member)}</div>`).join("")}
+            <div class="voice-card">
+              <strong>Voz</strong>
+              El panel de audio y micrófono aparecerá aquí después.
+              <span class="pill">Próximamente</span>
+            </div>
+          </aside>
+        `;
+
+        const messageInput = document.getElementById("message-input");
+        if (messageInput) {
+          messageInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            const text = messageInput.value.trim();
+            if (!text) return;
+            const currentName = state.userProfile?.name || "Tú";
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const server = state.servers.find((item) => item.id === state.selectedServerId);
+            if (!server) return;
+            if (!server.members.includes(currentName)) {
+              server.members.push(currentName);
+            }
+            server.messages.push({ user: currentName, time, text });
+            messageInput.value = "";
+            saveStateToFirebase();
+            render();
+          });
+        }
+      }
+
+      function getSelectedCategory() {
+        return state.categories.find((category) => category.id === state.selectedCategoryId) || state.categories[0];
+      }
+
+      function refreshTeamsContent() {
+        const selectedCategory = getSelectedCategory();
+        const filteredCategories = state.categories.filter((category) =>
+          category.name.toLowerCase().includes(state.categorySearch.toLowerCase())
+        );
+
+        const categoriesListEl = document.getElementById("categories-list");
+        const teamsPanelContentEl = document.getElementById("teams-panel-content");
+        const teamsCountEl = document.getElementById("teams-count");
+
+        if (categoriesListEl) {
+          categoriesListEl.innerHTML = filteredCategories.length
+            ? filteredCategories.map((category) => `
+                <button class="category-item${category.id === selectedCategory?.id ? " active" : ""}" data-category-id="${category.id}">
+                  <span class="name">${category.name}</span>
+                  <div class="meta">${category.teams.length} team${category.teams.length === 1 ? "" : "s"}</div>
+                </button>
+              `).join("")
+            : `<div class="empty-state">No hay categorías que coincidan con la búsqueda.</div>`;
+        }
+
+        if (teamsCountEl) {
+          teamsCountEl.textContent = `${selectedCategory ? selectedCategory.teams.length : 0} teams`;
+        }
+
+        if (teamsPanelContentEl) {
+          teamsPanelContentEl.innerHTML = selectedCategory && selectedCategory.teams.length
+            ? `<div class="teams-grid">${selectedCategory.teams.map((team) => `
+                <div class="team-card-item">
+                  <h4>${team.name}</h4>
+                  <p>${team.description}</p>
+                  <div class="team-pill">${team.members.length} miembro${team.members.length === 1 ? '' : 's'}</div>
+                  <div class="team-actions">
+                    ${team.createdByMe ? `<button class="share-btn" data-team-id="${team.id}">Compartir código</button>` : `<button class="join-btn" data-team-id="${team.id}">${team.joined ? "Ya estás dentro" : "Unirse al team"}</button>`}
+                  </div>
+                </div>
+              `).join("")}</div>`
+            : `<div class="empty-state">Esta categoría aún no tiene teams. Crea uno desde el botón de arriba.</div>`;
+        }
+      }
+
+      function generateTeamCode(prefix = "TEAM") {
+        const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+        return `${prefix}-${randomPart}`;
+      }
+
+      function renderTeamsView() {
+        const selectedCategory = getSelectedCategory();
+        sidebarPanelEl.style.display = "none";
+        currentChannelEl.textContent = "Teams";
+        topbarTextEl.innerHTML = `Hola, ${state.userProfile?.name || "invitado"} <button class="action-btn secondary" data-action="change-profile">Cambiar perfil</button> <button class="action-btn secondary" data-action="logoff">Cerrar sesión</button>`;
+
+        contentAreaEl.innerHTML = `
+          <section class="teams-view">
+            <div class="teams-toolbar">
+              <div class="search-box">
+                <span>🔎</span>
+                <input id="category-search" type="text" value="${state.categorySearch}" placeholder="Buscar categorías" />
+              </div>
+              <div>
+                <button class="action-btn secondary" id="create-category-btn">Crear categoría</button>
+                <button class="action-btn primary" id="create-team-btn">Crear team</button>
+              </div>
+            </div>
+            <div class="teams-layout">
+              <div class="categories-panel">
+                <h3 style="margin:0 0 10px">Categorías</h3>
+                <div id="categories-list"></div>
+              </div>
+              <div class="teams-panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h3 style="margin:0">${selectedCategory ? selectedCategory.name : "Selecciona una categoría"}</h3>
+                  <span class="team-pill" id="teams-count">${selectedCategory ? `${selectedCategory.teams.length} teams` : "0 teams"}</span>
+                </div>
+                <div id="teams-panel-content"></div>
+              </div>
+            </div>
+          </section>
+        `;
+
+        document.getElementById("category-search").addEventListener("input", (event) => {
+          state.categorySearch = event.target.value;
+          refreshTeamsContent();
+        });
+
+        document.getElementById("categories-list").addEventListener("click", (event) => {
+          const button = event.target.closest(".category-item");
+          if (!button) return;
+          state.selectedCategoryId = button.getAttribute("data-category-id");
+          refreshTeamsContent();
+        });
+
+        document.getElementById("create-category-btn").addEventListener("click", () => openModal("category"));
+        document.getElementById("create-team-btn").addEventListener("click", () => openModal("team"));
+
+        refreshTeamsContent();
+
+        document.querySelectorAll(".join-btn").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            const teamId = event.currentTarget.getAttribute("data-team-id");
+            const team = state.categories.flatMap((category) => category.teams).find((item) => item.id === teamId);
+            if (!team) return;
+
+            const enteredCode = window.prompt("Ingresa el código del team");
+            if (!enteredCode) return;
+
+            if (enteredCode.trim().toUpperCase() === team.code.toUpperCase()) {
+              if (!team.members.includes("Tú")) {
+                team.members.push("Tú");
+              }
+              team.joined = true;
+              saveStateToFirebase();
+              render();
+            } else {
+              window.alert("Código incorrecto");
+            }
+          });
+        });
+
+        document.querySelectorAll(".share-btn").forEach((button) => {
+          button.addEventListener("click", async (event) => {
+            const teamId = event.currentTarget.getAttribute("data-team-id");
+            const team = state.categories.flatMap((category) => category.teams).find((item) => item.id === teamId);
+            if (!team) return;
+
+            try {
+              await navigator.clipboard.writeText(team.code);
+              event.currentTarget.textContent = "¡Código copiado!";
+              setTimeout(() => {
+                event.currentTarget.textContent = "Compartir código";
+              }, 1400);
+            } catch {
+              window.alert(`Código del team: ${team.code}`);
+            }
+          });
+        });
+      }
+
+      function renderPeopleView() {
+        sidebarPanelEl.style.display = "none";
+        currentChannelEl.textContent = "Personas";
+        const activeCount = state.peopleCallActiveIds.length;
+        topbarTextEl.innerHTML = `Personas registradas (${state.registeredUsers.length}) <button class="action-btn secondary" data-action="change-profile">Cambiar perfil</button> <button class="action-btn secondary" data-action="logoff">Cerrar sesión</button>`;
+
+        const filteredUsers = state.registeredUsers.filter((user) => user.name.toLowerCase().includes(state.peopleSearch.toLowerCase()));
+        const peopleListHtml = filteredUsers.length
+          ? `<div class="teams-grid">${filteredUsers
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((user) => {
+                const isActive = state.peopleCallActiveIds.includes(user.id);
+                return `
+                  <div class="team-card-item" style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                      <div>
+                        <strong>${user.name}</strong>
+                        <div style="font-size:12px; color: var(--muted);">Edad ${user.age} · ${user.birthdate}</div>
+                      </div>
+                      <button class="share-btn" data-person-id="${user.id}" style="background:${isActive ? '#43b581' : '#5865f2'};">
+                        ${isActive ? 'Llamando' : 'Llamar'}
+                      </button>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div class="avatar" style="width:40px; height:40px; font-size:16px; ${user.photo ? `background-image:url(${user.photo}); background-size:cover;` : ''}">${user.photo ? '' : user.name.charAt(0).toUpperCase()}</div>
+                      <div style="font-size:13px; color:var(--muted);">${user.name} está ${isActive ? 'en llamada' : 'disponible'}</div>
+                    </div>
+                  </div>
+                `;
+              })}</div>`
+          : `<div class="empty-state">No hay personas registradas aún.</div>`;
+
+        contentAreaEl.innerHTML = `
+          <section class="teams-view">
+            <div class="teams-toolbar">
+              <div class="search-box">
+                <span>👥</span>
+                <input id="people-search" type="text" placeholder="Buscar personas..." />
+              </div>
+              <div class="team-pill">Llamando a ${activeCount} persona${activeCount === 1 ? '' : 's'}</div>
+            </div>
+            <div class="teams-layout">
+              <div class="teams-panel" style="width:100%;">
+                ${peopleListHtml}
+              </div>
+            </div>
+          </section>
+        `;
+
+        const peopleSearchEl = document.getElementById("people-search");
+        if (peopleSearchEl) {
+          peopleSearchEl.value = state.peopleSearch || "";
+          peopleSearchEl.addEventListener("input", (event) => {
+            state.peopleSearch = event.target.value;
+            renderPeopleView();
+          });
+        }
+      }
+
+      function render() {
+        renderServerButtons();
+        updateUserCard();
+        if (state.mode === "teams") {
+          renderTeamsView();
+        } else if (state.mode === "people") {
+          renderPeopleView();
+        } else {
+          renderServerView();
+        }
+      }
+
+      function selectServer(id) {
+        state.mode = "servers";
+        state.selectedServerId = id;
+        render();
+      }
+
+      function openModal(type) {
+        state.modalType = type;
+        modalEl.classList.add("show");
+        modalInputEl.value = "";
+        modalTextareaEl.value = "";
+        modalNoticeEl.textContent = "";
+
+        if (type === "category") {
+          modalTitleEl.textContent = "Crear una categoría";
+          modalDescriptionEl.textContent = "Escribe el nombre de la nueva categoría de teams.";
+          modalInputEl.placeholder = "Nombre de la categoría";
+          modalTextareaEl.style.display = "none";
+        } else if (type === "team") {
+          modalTitleEl.textContent = "Crear un team";
+          modalDescriptionEl.textContent = "Escribe el nombre y descripción del nuevo team.";
+          modalInputEl.placeholder = "Nombre del team";
+          modalTextareaEl.style.display = "block";
+          modalTextareaEl.placeholder = "Descripción del team";
+        } else {
+          modalTitleEl.textContent = "Crear un nuevo servidor";
+          modalDescriptionEl.textContent = "Escribe el nombre del servidor que quieres crear.";
+          modalInputEl.placeholder = "Nombre del servidor";
+          modalTextareaEl.style.display = "none";
+        }
+
+        modalInputEl.focus();
+      }
+
+      function closeModal() {
+        modalEl.classList.remove("show");
+        modalNoticeEl.textContent = "";
+      }
+
+      function createServer() {
+        const name = modalInputEl.value.trim();
+        if (!name) return;
+
+        const currentName = state.userProfile?.name || "Tú";
+        const newServer = {
+          id: `srv-${Date.now()}`,
+          label: name.charAt(0).toUpperCase(),
+          name,
+          title: "# general",
+          channels: ["# general", "# chat", "# novedades"],
+          members: [currentName],
+          messages: [{ user: currentName, time: "ahora", text: `Bienvenido a ${name}.` }]
+        };
+
+        state.servers.push(newServer);
+        state.mode = "servers";
+        state.selectedServerId = newServer.id;
+        saveStateToFirebase();
+        closeModal();
+        render();
+      }
+
+      function createCategory() {
+        const name = modalInputEl.value.trim();
+        if (!name) return;
+
+        const exists = state.categories.some((category) => category.name.toLowerCase() === name.toLowerCase());
+        if (exists) {
+          modalNoticeEl.textContent = "Ese nombre de categoría ya existe.";
+          return;
+        }
+
+        state.categories.unshift({ id: `cat-${Date.now()}`, name, teams: [] });
+        state.selectedCategoryId = state.categories[0].id;
+        saveStateToFirebase();
+        closeModal();
+        render();
+      }
+
+      function createTeam() {
+        const name = modalInputEl.value.trim();
+        const description = modalTextareaEl.value.trim();
+        if (!name) return;
+
+        const category = state.categories.find((item) => item.id === state.selectedCategoryId) || state.categories[0];
+        if (!category) return;
+
+        const currentName = state.userProfile?.name || "Tú";
+        category.teams.push({ id: `team-${Date.now()}`, name, description: description || "Team creado recientemente", members: [currentName], code: generateTeamCode(name.slice(0, 4).toUpperCase()), createdByMe: true, joined: true });
+        saveStateToFirebase();
+        closeModal();
+        render();
+      }
+
+      function confirmModalAction() {
+        if (state.modalType === "server") createServer();
+        if (state.modalType === "category") createCategory();
+        if (state.modalType === "team") createTeam();
+      }
+
+      serverListEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+
+        if (button.id === "create-server-btn") {
+          openModal("server");
+          return;
+        }
+
+        if (button.id === "people-btn") {
+          state.mode = "people";
+          render();
+          return;
+        }
+
+        if (button.id === "teams-btn") {
+          state.mode = "teams";
+          render();
+          return;
+        }
+
+        const serverId = button.getAttribute("data-server-id");
+        if (serverId) selectServer(serverId);
+      });
+
+      document.body.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const action = button.dataset.action;
+        if (action === "change-profile") {
+          resetProfile();
+        }
+        if (action === "logoff") {
+          logoff();
+        }
+      });
+
+      confirmCreateBtn.addEventListener("click", confirmModalAction);
+      cancelCreateBtn.addEventListener("click", closeModal);
+      modalEl.addEventListener("click", (event) => {
+        if (event.target === modalEl) closeModal();
+      });
+      modalInputEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") confirmModalAction();
+      });
+
+      window.addEventListener("load", loadStateFromFirebase);
+    </script>
+  </body>
+</html>
