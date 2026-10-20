@@ -1,1050 +1,1090 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Meet In Record</title>
-    <style>
-      :root {
-        --bg: #36393f;
-        --panel: #2f3136;
-        --sidebar: #202225;
-        --channel-hover: #40444b;
-        --accent: #5865f2;
-        --text: #ffffff;
-        --muted: #b9bbbe;
-        --border: #202225;
-        --message: #32353b;
-      }
-
-      * { box-sizing: border-box; }
-
-      body {
-        margin: 0;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: #313338;
-        color: var(--text);
-        height: 100vh;
-        overflow: hidden;
-      }
-
-      .app { display: flex; height: 100vh; }
-      .servers { width: 88px; background: var(--sidebar); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-      .server-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #36393f; color: white; font-weight: 700; cursor: pointer; transition: 0.2s ease; border: 1px solid rgba(255,255,255,0.08); }
-      .server-icon:hover, .server-icon.active { background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 2px rgba(88,101,242,0.2); }
-      .server-icon.team { background: linear-gradient(135deg, #f59e0b, #ef4444); }
-
-      .sidebar { width: 240px; background: #2f3136; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-      .server-name { padding: 16px; font-weight: 700; border-bottom: 1px solid var(--border); }
-      .channels { flex: 1; padding: 12px; overflow: auto; }
-      .group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin: 10px 0 6px; padding: 0 8px; }
-      .channel { width: 100%; border: none; background: transparent; color: var(--muted); text-align: left; padding: 8px 10px; border-radius: 5px; font-size: 15px; cursor: pointer; margin-bottom: 2px; }
-      .channel:hover, .channel.active { background: var(--channel-hover); color: white; }
-
-      .team-card { margin: 12px; padding: 12px; border-radius: 8px; background: #202225; border: 1px solid rgba(255,255,255,0.06); }
-      .team-card h4 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; color: var(--muted); }
-      .team-code { display: inline-block; margin-top: 6px; padding: 8px 10px; border-radius: 6px; background: #36393f; color: #8ea1ff; font-weight: 700; letter-spacing: 0.5px; }
-      .copy-btn { margin-top: 8px; border: none; border-radius: 6px; padding: 7px 10px; background: var(--accent); color: white; cursor: pointer; font-size: 12px; }
-
-      .user-card { padding: 10px 12px; border-top: 1px solid var(--border); background: #292b2f; display: flex; align-items: center; justify-content: space-between; }
-      .user-info { display: flex; align-items: center; gap: 8px; }
-      .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #f56565, #38b2ac); display: grid; place-items: center; font-weight: 700; color: white; }
-      .user-name { font-size: 14px; font-weight: 600; }
-      .user-status { font-size: 12px; color: var(--muted); }
-      .controls { display: flex; gap: 6px; }
-      .control-btn { border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
-
-      .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
-      .topbar { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-      .channel-title { font-weight: 600; display: flex; align-items: center; gap: 6px; }
-      .topbar-actions { color: var(--muted); font-size: 14px; }
-      .content { display: flex; flex: 1; min-height: 0; }
-
-      .messages { flex: 1; padding: 18px 20px 12px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
-      .message-list { overflow: auto; padding-right: 6px; }
-      .message { display: flex; gap: 12px; padding: 8px 0; }
-      .message:hover { background: rgba(255,255,255,0.02); border-radius: 8px; }
-      .message-body { background: var(--message); border-radius: 8px; padding: 10px 12px; max-width: 700px; }
-      .meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-      .meta strong { color: white; }
-      .meta span { color: var(--muted); font-size: 12px; }
-      .composer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
-      .composer-box { display: flex; align-items: center; gap: 10px; background: #40444b; border: 1px solid #202225; border-radius: 8px; padding: 10px 12px; }
-      .composer-box input { flex: 1; border: none; outline: none; background: transparent; color: var(--text); font-size: 15px; }
-
-      .member-panel { width: 240px; background: #2f3136; border-left: 1px solid var(--border); padding: 14px; }
-      .panel-title { font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-      .member { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--muted); font-size: 14px; }
-      .dot { width: 8px; height: 8px; border-radius: 50%; background: #43b581; }
-      .voice-card { margin-top: 16px; background: #202225; border-radius: 8px; padding: 12px; color: var(--muted); }
-      .voice-card strong { display: block; color: white; margin-bottom: 6px; }
-      .pill { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 999px; background: rgba(88, 101, 242, 0.2); color: #8ea1ff; font-size: 12px; }
-
-      .teams-view { display: flex; flex-direction: column; gap: 16px; padding: 16px; width: 100%; }
-      .teams-toolbar { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-      .search-box { display: flex; align-items: center; gap: 8px; background: #40444b; padding: 8px 12px; border-radius: 8px; min-width: 280px; }
-      .search-box input { border: none; outline: none; background: transparent; color: white; width: 100%; }
-      .action-btn { border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; color: white; }
-      .action-btn.primary { background: var(--accent); }
-      .action-btn.secondary { background: #40444b; }
-      .teams-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; flex: 1; min-height: 0; }
-      .categories-panel, .teams-panel { background: #2f3136; border-radius: 10px; padding: 12px; overflow: auto; }
-      .category-item { width: 100%; border: none; background: transparent; color: var(--muted); text-align: left; padding: 10px; border-radius: 8px; margin-bottom: 6px; cursor: pointer; }
-      .category-item.active, .category-item:hover { background: #40444b; color: white; }
-      .category-item .name { display: block; font-weight: 600; }
-      .category-item .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
-      .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-      .team-card-item { background: #202225; border-radius: 8px; padding: 12px; border: 1px solid rgba(255,255,255,0.06); }
-      .team-card-item h4 { margin: 0 0 6px; font-size: 16px; }
-      .team-card-item p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
-      .team-pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(88, 101, 242, 0.2); color: #8ea1ff; font-size: 12px; }
-      .team-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-      .join-btn, .share-btn { border: none; border-radius: 6px; padding: 8px 10px; cursor: pointer; color: white; font-size: 13px; }
-      .join-btn { background: var(--accent); }
-      .share-btn { background: #43b581; }
-      .empty-state { color: var(--muted); padding: 20px; text-align: center; }
-
-      .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 20; }
-      .modal-backdrop.show { display: flex; }
-      .welcome-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 25; padding: 20px; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; }
-      .welcome-backdrop.show { display: flex; pointer-events: auto; opacity: 1; }
-      .welcome-card { width: min(520px, 100%); background: #2d3136; border-radius: 18px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.08); }
-      .welcome-card h2 { margin: 0 0 10px; font-size: 24px; }
-      .welcome-card p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
-      .welcome-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-      .welcome-field label { color: var(--muted); font-size: 13px; }
-      .welcome-input { width: 100%; border: 1px solid #2f3136; border-radius: 10px; padding: 12px 14px; background: #2b2d31; color: white; }
-      .welcome-button { width: 100%; border: none; border-radius: 10px; padding: 12px; background: var(--accent); color: white; cursor: pointer; font-size: 15px; }
-      .modal { width: min(420px, 90vw); background: #2f3136; border-radius: 10px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
-      .modal h3 { margin: 0 0 8px; }
-      .modal input, .modal textarea { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #202225; background: #40444b; color: white; margin-top: 10px; }
-      .modal textarea { min-height: 90px; resize: vertical; }
-      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
-      .modal-actions button { border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
-      .modal-actions .primary { background: var(--accent); color: white; }
-      .modal-actions .secondary { background: #40444b; color: white; }
-      .notice { color: #ff9c9c; font-size: 13px; margin-top: 8px; }
-
-      @media (max-width: 1000px) { .member-panel { display: none; } .teams-layout { grid-template-columns: 1fr; } }
-    </style>
-  </head>
-  <body>
-    <div class="app">
-      <aside class="servers" id="server-list"></aside>
-
-      <aside class="sidebar" id="sidebar-panel">
-        <div class="server-name" id="server-name"></div>
-        <div class="channels" id="channel-list"></div>
-        <div id="team-card-area"></div>
-
-        <div class="user-card">
-          <div class="user-info">
-            <div class="avatar">R</div>
-            <div>
-              <div class="user-name">Roberto</div>
-              <div class="user-status">En línea</div>
-            </div>
-          </div>
-          <div class="controls">
-            <button class="control-btn" id="mic-btn" title="Micrófono">🎤</button>
-            <button class="control-btn" title="Audio">🔊</button>
-          </div>
-        </div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <div class="channel-title" id="current-channel"></div>
-          <div class="topbar-actions" id="topbar-text"></div>
-        </header>
-
-        <div class="content" id="content-area"></div>
-      </main>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff8ee">
+  <title>Lumina — Un mundo para leer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #253344;
+      --muted: #728094;
+      --paper: #fffdf9;
+      --cream: #fff8ee;
+      --purple: #7857d5;
+      --purple-dark: #5e3dbb;
+      --peach: #ffb889;
+      --line: #eee8df;
+      --shadow: 0 18px 48px rgba(69, 54, 38, .09);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: ui-rounded, "Trebuchet MS", Arial, sans-serif;
+      line-height: 1.55;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px max(24px, calc((100vw - 1160px) / 2));
+      background: rgba(255, 253, 249, .92);
+      border-bottom: 1px solid rgba(238, 232, 223, .8);
+      backdrop-filter: blur(12px);
+    }
+    .account-actions { display: flex; align-items: center; gap: 10px; }
+    .account-label { color: var(--muted); font-size: .82rem; font-weight: 700; }
+    .account-button { padding: 7px 11px; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--purple-dark); font-size: .8rem; font-weight: 800; }
+    .auth-gate { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 20px; background: radial-gradient(circle at top left, #eee8ff, transparent 50%), var(--cream); }
+    .auth-gate[hidden] { display: none; }
+    .auth-card { width: min(100%, 450px); padding: clamp(25px, 6vw, 42px); border: 1px solid var(--line); border-radius: 26px; background: var(--paper); box-shadow: var(--shadow); }
+    .auth-card h1 { margin-bottom: 8px; font-size: 2rem; }
+    .auth-card > p { color: var(--muted); }
+    .auth-form { display: grid; gap: 14px; margin-top: 22px; }
+    .auth-form label { display: grid; gap: 6px; color: var(--ink); font-size: .9rem; font-weight: 800; }
+    .auth-form input { width: 100%; min-height: 48px; padding: 11px 13px; border: 1px solid #ded8e9; border-radius: 12px; outline: none; }
+    .auth-form input:focus { border-color: #9c84e7; box-shadow: 0 0 0 3px #eee8ff; }
+    .auth-error { min-height: 24px; margin: 0; color: #b64f43; font-size: .88rem; }
+    .auth-note { margin: 14px 0 0; color: #8a93a1; font-size: .76rem; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-size: 1.2rem; font-weight: 900; letter-spacing: -.04em; }
+    .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px; background: #eee8ff; font-size: 1.35rem; }
+    .nav { display: flex; gap: 8px; }
+    .nav a { padding: 9px 13px; color: #596579; text-decoration: none; border-radius: 12px; font-size: .92rem; font-weight: 700; }
+    .nav a:hover { background: #f4f0e9; color: var(--purple-dark); }
+    .page { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      align-items: center;
+      gap: 28px;
+      min-height: 380px;
+      padding: 54px 5.5%;
+      margin: 34px 0 28px;
+      overflow: hidden;
+      border-radius: 30px;
+      background: linear-gradient(115deg, #eee8ff 0%, #f5efff 52%, #ffe9d8 100%);
+      position: relative;
+    }
+    .eyebrow { margin: 0 0 10px; color: var(--purple-dark); font-size: .79rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 600px; margin-bottom: 15px; font-size: clamp(2.3rem, 5vw, 4rem); line-height: 1.06; letter-spacing: -.055em; }
+    .hero-copy { max-width: 550px; margin-bottom: 23px; color: #5c6577; font-size: 1.08rem; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 45px;
+      padding: 10px 17px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--purple);
+      color: white;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform .15s, background .15s;
+    }
+    .button:hover { transform: translateY(-2px); background: var(--purple-dark); }
+    .button.secondary { background: #f1edff; color: var(--purple-dark); }
+    .button.secondary:hover { background: #e6deff; }
+    .hero-art { display: grid; min-height: 230px; place-items: center; position: relative; }
+    .sun { position: absolute; top: 5px; right: 9%; width: 65px; height: 65px; border-radius: 50%; background: #ffd786; }
+    .book { position: relative; z-index: 1; font-size: clamp(7rem, 18vw, 12rem); filter: drop-shadow(0 15px 12px rgba(95, 68, 134, .18)); transform: rotate(-7deg); }
+    .spark { position: absolute; color: #f29b63; font-size: 2rem; }
+    .spark.one { top: 23%; left: 10%; } .spark.two { right: 9%; bottom: 14%; color: var(--purple); }
+    .section { padding: 28px 0 42px; scroll-margin-top: 84px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .section-heading h2 { margin-bottom: 5px; font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.04em; }
+    .section-heading p { margin-bottom: 0; color: var(--muted); }
+    .lesson-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 8px 25px rgba(69, 54, 38, .04); }
+    .lesson-card { padding: 22px; }
+    .lesson-card h3 { margin-bottom: 8px; font-size: 1.15rem; }
+    .lesson-card p { color: #687487; }
+    .vowels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 17px 0; }
+    .vowel {
+      min-height: 100px;
+      border: 1px solid transparent;
+      border-radius: 17px;
+      background: #f3efff;
+      color: var(--purple-dark);
+      font-size: 2.3rem;
+      font-weight: 900;
+      transition: transform .15s, border .15s;
+    }
+    .vowel:nth-child(2) { background: #fff0e7; color: #c56a36; }
+    .vowel:nth-child(3) { background: #eaf6ed; color: #367e4f; }
+    .vowel:nth-child(4) { background: #e9f2ff; color: #426eae; }
+    .vowel:nth-child(5) { background: #fff4d8; color: #9b7321; }
+    .vowel:hover, .vowel.active { transform: translateY(-3px); border-color: currentColor; }
+    .vowel-help { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 47px; padding: 10px 13px; border-radius: 13px; background: #faf7f0; color: #566276; }
+    .vowel-help strong { color: var(--ink); }
+    .mini-play { border: 0; background: transparent; color: var(--purple-dark); font-size: 1rem; font-weight: 800; }
+    .story-layout { display: grid; grid-template-columns: 300px 1fr; align-items: start; gap: 20px; }
+    .story-list { display: grid; gap: 9px; padding: 12px; }
+    .story-choice { width: 100%; padding: 12px; border: 1px solid transparent; border-radius: 14px; background: transparent; color: var(--ink); text-align: left; }
+    .story-choice:hover { background: #faf7f0; }
+    .story-choice.active { border-color: #d9ceff; background: #f3efff; color: var(--purple-dark); }
+    .story-choice strong { display: block; font-size: .98rem; }
+    .story-choice span { display: block; margin-top: 2px; color: var(--muted); font-size: .82rem; }
+    .reading-card { padding: clamp(20px, 4vw, 32px); }
+    .reading-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .reading-top h3 { margin: 0; font-size: 1.3rem; }
+    .level { padding: 5px 10px; border-radius: 20px; background: #fff0e7; color: #a9592d; font-size: .77rem; font-weight: 800; }
+    .story-text { min-height: 190px; padding: 17px 0 8px; color: #4c596d; font-size: 1.1rem; line-height: 1.95; white-space: pre-line; }
+    .read-highlight { padding: 2px 5px; border-radius: 6px; background: #ffedaa; color: #53451b; }
+    .reading-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+    .progress-wrap { display: flex; align-items: center; gap: 10px; width: 100%; margin: 6px 0 5px; color: var(--muted); font-size: .85rem; }
+    .progress { flex: 1; height: 8px; overflow: hidden; border-radius: 9px; background: #eeeaf4; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--purple); transition: width .2s; }
+    .tip { margin: 14px 0 0; color: var(--muted); font-size: .86rem; }
+    .journey-section { position: sticky; top: 64px; z-index: 4; padding: 12px 0; background: var(--cream); }
+    .journey-section .section-heading { margin-bottom: 10px; }
+    .journey-section .section-heading h2 { font-size: 1.4rem; }
+    .journey-section .section-heading p:not(.eyebrow) { display: none; }
+    .level-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .level-card { min-height: 76px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); color: var(--ink); text-align: left; box-shadow: 0 8px 25px rgba(69, 54, 38, .04); }
+    .level-card:hover:not(:disabled) { transform: translateY(-3px); border-color: #cfc1fa; }
+    .level-card.current { outline: 2px solid var(--purple); outline-offset: 1px; }
+    .level-card:disabled { cursor: not-allowed; opacity: .55; }
+    .level-card.completed { border-color: #b9dfc4; background: #f1fbf3; }
+    .level-number { display: inline-grid; width: 28px; height: 28px; margin-right: 5px; place-items: center; border-radius: 9px; background: #eee8ff; color: var(--purple-dark); font-weight: 900; }
+    .level-card:nth-child(2) .level-number { background: #fff0e7; color: #b36439; }
+    .level-card:nth-child(3) .level-number, .level-card:nth-child(4) .level-number { background: #eaf6ed; color: #367e4f; }
+    .level-card:nth-child(5) .level-number { background: #fff4d8; color: #9b7321; }
+    .level-card strong, .level-card small { display: inline; font-size: .85rem; }
+    .level-card small { display: block; margin-left: 36px; font-size: .72rem; }
+    .level-card small { margin-top: 4px; color: var(--muted); }
+    .journey-progress { display: flex; align-items: center; gap: 15px; margin-top: 15px; color: var(--muted); font-size: .88rem; }
+    .journey-progress .progress { height: 10px; }
+    .level-section { padding-top: 24px; scroll-margin-top: 170px; }
+    .level-section:not(.active-level) { display: none; }
+    .level-lock { padding: 18px; border: 1px dashed #d8cfee; border-radius: 16px; background: #f6f2ff; color: var(--purple-dark); font-weight: 800; }
+    .level-lock[hidden], .diploma-section[hidden] { display: none; }
+    .level-locked .level-content { display: none; }
+    .level-content { display: block; }
+    .video-card { display: grid; grid-template-columns: .8fr 1.2fr; align-items: center; gap: 20px; margin-top: 18px; padding: 22px; }
+    .video-card h3 { margin-bottom: 8px; }
+    .video-card p:last-child { margin-bottom: 0; color: var(--muted); }
+    .video-frame { position: relative; width: 100%; overflow: hidden; padding-top: 56.25%; border-radius: 16px; background: #eee8ff; }
+    .video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .level-finish { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 17px; background: var(--paper); }
+    .level-feedback { color: var(--muted); font-size: .9rem; }
+    .finish-level:disabled { cursor: not-allowed; opacity: .5; transform: none; }
+    .math-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .math-lesson, .math-practice { padding: 24px; }
+    .math-emoji { display: block; margin-bottom: 12px; font-size: 2rem; }
+    .math-lesson h3, .math-practice h3 { font-size: 1.25rem; }
+    .math-lesson ol { padding-left: 22px; color: #5e6a7d; }
+    .math-lesson li { margin: 8px 0; }
+    .worked-example { display: grid; gap: 5px; padding: 14px; border-radius: 14px; background: #f6f2ff; color: #51417b; }
+    .worked-example span { font-size: .92rem; }
+    .answer-form { display: flex; gap: 9px; margin-top: 17px; }
+    .answer-form input { width: min(100%, 240px); min-width: 0; height: 76px; padding: 14px 18px; border: 2px solid #d9ceff; border-radius: 17px; outline: none; background: #fcfaff; color: var(--ink); font-size: 2rem; font-weight: 900; text-align: center; }
+    .answer-form input:focus, .learner-name:focus { border-color: #9c84e7; box-shadow: 0 0 0 3px #eee8ff; }
+    .quiz-feedback { min-height: 28px; margin: 13px 0 4px; color: var(--muted); }
+    .quiz-feedback.correct { color: #367e4f; font-weight: 800; }
+    .quiz-feedback.incorrect { color: #b64f43; font-weight: 800; }
+    .quiz-score { margin: 0; color: var(--purple-dark); font-weight: 900; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    .diploma { position: relative; max-width: 780px; margin: 0 auto; padding: 44px 28px; border: 8px double #d5b65e; border-radius: 24px; background: linear-gradient(135deg, #fffdf5, #fff7e2); text-align: center; box-shadow: var(--shadow); }
+    .diploma h2 { margin: 0 0 14px; color: #765824; font-size: clamp(1.8rem, 4vw, 2.7rem); }
+    .diploma-stars { margin-bottom: 10px; color: #c99c38; font-size: 1.5rem; }
+    .diploma-copy { margin: 10px auto; color: #5b6574; }
+    .learner-name { width: min(100%, 380px); padding: 10px; border: 0; border-bottom: 2px solid #c99c38; border-radius: 0; background: transparent; color: var(--ink); text-align: center; font-size: 1.7rem; font-weight: 900; outline: none; }
+    .diploma-congrats { margin: 20px 0 8px; color: #765824; font-size: 1.08rem; font-weight: 900; }
+    .diploma-signature { margin-bottom: 20px; color: var(--purple-dark); font-weight: 900; }
+    .quiz-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .quiz-actions .button[hidden] { display: none; }
+    .exercise-progress { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); font-weight: 800; }
+    .exercise-progress .progress { height: 10px; }
+    .vowel-exercise { padding: 20px; border-radius: 18px; background: #faf7f0; text-align: center; }
+    .vowel-word { margin: 10px 0 17px; color: var(--purple-dark); font-size: clamp(2.4rem, 9vw, 4rem); font-weight: 900; letter-spacing: .08em; }
+    .vowel-answers { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .vowel-answers button { min-height: 55px; border: 1px solid #e3dcf4; border-radius: 13px; background: white; color: var(--purple-dark); font-size: 1.5rem; font-weight: 900; }
+    .vowel-answers button:hover { background: #eee8ff; }
+    .story-progress { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; color: var(--muted); font-size: .85rem; font-weight: 800; }
+    .story-choice.completed { border-color: #b9dfc4; background: #f1fbf3; }
+    .story-choice.completed span::after { content: " · Leído ✓"; color: #367e4f; font-weight: 900; }
+    .math-question-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    @media print {
+      body { background: white; }
+      .topbar, .hero, .journey-section, .level-section, .lumina-section, footer, #print-diploma { display: none !important; }
+      .page { width: 100%; }
+      .diploma-section, .diploma-section[hidden] { display: block !important; padding: 24px; }
+      .diploma { max-width: none; margin: 0; box-shadow: none; }
+    }
+    body.logged-out { overflow: hidden; }
+    body.logged-out > :not(.auth-gate) { visibility: hidden; }
+    .lumina-section { padding-bottom: 62px; }
+    .lumina-card { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+    .lumina-intro { padding: 30px; background: linear-gradient(145deg, #eee8ff, #f9f5ff); }
+    .lumina-intro h2 { margin-bottom: 9px; font-size: 1.9rem; letter-spacing: -.04em; }
+    .lumina-intro p { color: #626d80; }
+    .lumina-face { display: inline-grid; width: 58px; height: 58px; margin-bottom: 15px; place-items: center; border-radius: 19px; background: white; font-size: 2rem; }
+    .chat-panel { display: flex; min-height: 300px; flex-direction: column; padding: 20px; }
+    .chat-messages { flex: 1; max-height: 240px; overflow: auto; padding: 2px 4px 12px; }
+    .message { width: fit-content; max-width: 90%; margin: 0 0 10px; padding: 10px 13px; border-radius: 14px 14px 14px 4px; background: #f4f1eb; color: #4e5b6e; font-size: .93rem; }
+    .message.user { margin-left: auto; border-radius: 14px 14px 4px 14px; background: #eee8ff; color: #513ba1; }
+    .chat-form { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .chat-form input { min-width: 0; flex: 1; padding: 11px 13px; border: 1px solid #e4dfd7; border-radius: 12px; outline: none; }
+    .chat-form input:focus { border-color: #9c84e7; box-shadow: 0 0 0 3px #eee8ff; }
+    .icon-button { display: grid; width: 44px; min-width: 44px; place-items: center; border: 0; border-radius: 12px; background: #f1edff; color: var(--purple-dark); font-size: 1.1rem; }
+    .icon-button:hover { background: #e6deff; }
+    .chat-note { margin: 8px 0 0; color: #8a93a1; font-size: .75rem; }
+    footer { padding: 22px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: .87rem; }
+    @media (max-width: 760px) {
+      .topbar { padding: 11px 18px; }
+      .nav { gap: 0; } .nav a { padding: 8px; font-size: .8rem; }
+      .account-label { display: none; }
+      .hero { grid-template-columns: 1fr; min-height: auto; gap: 5px; padding: 36px 25px; }
+      .hero-art { min-height: 150px; } .book { font-size: 8rem; }
+      .lesson-grid, .lumina-card { grid-template-columns: 1fr; }
+      .level-map { grid-template-columns: repeat(2, 1fr); }
+      .journey-section .section-heading h2 { font-size: 1.15rem; }
+      .math-grid, .video-card { grid-template-columns: 1fr; }
+      .story-layout { grid-template-columns: 1fr; }
+      .story-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .story-choice { padding: 10px; }
+    }
+    @media (max-width: 430px) {
+      .page { width: min(100% - 26px, 1160px); }
+      .brand { font-size: 1rem; } .brand-mark { width: 33px; height: 33px; }
+      .nav a { font-size: .73rem; padding: 7px 6px; }
+      .vowels { gap: 6px; } .vowel { min-height: 73px; font-size: 1.8rem; }
+      .story-list { grid-template-columns: 1fr 1fr; padding: 8px; }
+      .story-choice strong { font-size: .87rem; }
+      .reading-controls .button { flex: 1; }
+      .level-finish { align-items: stretch; flex-direction: column; }
+      .answer-form { flex-wrap: wrap; }
+      .answer-form input { width: 100%; flex: 1 0 100%; }
+      .answer-form .button { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <section class="auth-gate" id="auth-gate" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <span class="brand-mark" aria-hidden="true">✨</span>
+      <p class="eyebrow" style="margin-top:15px">Tu aventura de aprendizaje</p>
+      <h1 id="auth-title">¡Hola! Vamos a empezar</h1>
+      <p>Escribe tu nombre y tu correo para entrar y guardar tu avance en este dispositivo.</p>
+      <form class="auth-form" id="auth-form">
+        <label for="learner-name-entry">Tu nombre<input id="learner-name-entry" name="name" type="text" maxlength="40" autocomplete="name" placeholder="Por ejemplo, Ana" required></label>
+        <label for="learner-email-entry">Tu correo<input id="learner-email-entry" name="email" type="email" maxlength="254" autocomplete="email" placeholder="nombre@correo.com" required></label>
+        <button class="button" type="submit">Entrar a Lumina →</button>
+        <p class="auth-error" id="auth-error" aria-live="polite"></p>
+      </form>
+      <p class="auth-note">El nombre y el correo se guardan solamente en este dispositivo. Solo los correos autorizados pueden entrar.</p>
     </div>
+  </section>
+  <header class="topbar">
+    <a class="brand" href="#inicio" aria-label="Lumina, ir al inicio"><span class="brand-mark" aria-hidden="true">✨</span> lumina</a>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="#niveles">Mis niveles</a>
+      <a href="#pregunta">Pregúntame</a>
+    </nav>
+    <div class="account-actions"><span class="account-label" id="account-label"></span><button class="account-button" id="logout-button" type="button">Cambiar cuenta</button></div>
+  </header>
 
-    <div class="modal-backdrop" id="create-modal">
-      <div class="modal">
-        <h3 id="modal-title">Crear un nuevo servidor</h3>
-        <p id="modal-description">Escribe el nombre del servidor que quieres crear.</p>
-        <input id="modal-input" type="text" placeholder="Tu nombre" />
-        <input id="modal-input-2" type="number" placeholder="Edad" style="display:none" />
-        <input id="modal-input-3" type="date" placeholder="Fecha de nacimiento" style="display:none" />
-        <textarea id="modal-textarea" placeholder="Descripción del team" style="display:none"></textarea>
-        <div class="notice" id="modal-notice"></div>
-        <div class="modal-actions">
-          <button class="secondary" id="cancel-create">Cancelar</button>
-          <button class="primary" id="confirm-create">Crear</button>
+  <main class="page">
+    <section class="hero" id="inicio">
+      <div>
+        <p class="eyebrow">Un ratito para aprender</p>
+        <h1>Leer es una aventura. <span style="color:var(--purple)">¡Vamos juntos!</span></h1>
+        <p class="hero-copy">Practica las vocales, escucha palabras y descubre historias bonitas. Lúmina estará aquí para ayudarte cuando tengas dudas.</p>
+        <a class="button" href="#niveles">Ver mis niveles <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-art" aria-hidden="true"><span class="sun"></span><span class="spark one">✦</span><span class="book">📖</span><span class="spark two">✧</span></div>
+    </section>
+
+    <section class="section journey-section" id="niveles">
+      <div class="section-heading">
+        <div><p class="eyebrow">Tu camino de aprendizaje</p><h2>¡Cinco niveles para lograrlo!</h2><p>Completa cada nivel para desbloquear el siguiente. Al final recibirás tu diploma.</p></div>
+      </div>
+      <div class="level-map" id="level-map" aria-label="Niveles de aprendizaje"></div>
+      <div class="journey-progress"><span id="journey-label">0 de 5 niveles completados</span><div class="progress" role="progressbar" aria-label="Progreso de niveles" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><div class="progress-fill" id="journey-fill"></div></div></div>
+    </section>
+
+    <section class="section level-section" id="nivel-1" data-level="1">
+      <div class="section-heading">
+        <div><p class="eyebrow">Nivel 1 · ¡A, E, I, O, U!</p><h2>Las cinco vocales</h2><p>Las vocales aparecen en muchísimas palabras. ¡Vamos a conocerlas!</p></div>
+      </div>
+      <div class="level-lock" hidden>🔒 Primero completa el nivel anterior para entrar.</div>
+      <div class="level-content">
+      <div class="lesson-grid">
+        <article class="card lesson-card">
+          <h3>Toca una vocal para escucharla</h3>
+          <p>Las vocales son sonidos que podemos decir dejando salir el aire sin cerrar la boca.</p>
+          <div class="vowels" role="group" aria-label="Escucha las vocales">
+            <button class="vowel" data-vowel="A" aria-label="Escuchar la vocal A">A</button>
+            <button class="vowel" data-vowel="E" aria-label="Escuchar la vocal E">E</button>
+            <button class="vowel" data-vowel="I" aria-label="Escuchar la vocal I">I</button>
+            <button class="vowel" data-vowel="O" aria-label="Escuchar la vocal O">O</button>
+            <button class="vowel" data-vowel="U" aria-label="Escuchar la vocal U">U</button>
+          </div>
+          <div class="vowel-help" aria-live="polite"><span id="vowel-description"><strong>A, E, I, O, U</strong> — cada una tiene su propio sonido.</span><button class="mini-play" id="vowels-audio" type="button">▶ Escucharlas</button></div>
+        </article>
+        <article class="card lesson-card">
+          <h3>¿Para qué sirven?</h3>
+          <p>Las vocales se unen a otras letras para formar sílabas y palabras. Prueba a decirlas despacito:</p>
+          <p><strong>m + a = ma</strong> &nbsp; <strong>m + e = me</strong> &nbsp; <strong>m + i = mi</strong></p>
+          <p><strong>m + o = mo</strong> &nbsp; <strong>m + u = mu</strong></p>
+          <button class="button secondary" id="syllables-audio" type="button">🔊 Escuchar las sílabas</button>
+        </article>
+      </div>
+      <article class="card video-card">
+        <div><p class="eyebrow">Mira y aprende</p><h3>Las vocales también se aprenden cantando</h3><p>Disfruta este video y luego toca cada vocal para practicar.</p></div>
+        <div class="video-frame"><iframe src="https://www.youtube.com/embed/I90UCweAZdU?si=DrwZ6dculNvd-aQW" title="Video para aprender las vocales" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>
+      </article>
+      <article class="card lesson-card vowel-test">
+        <h3>Prueba de vocales · 30 ejercicios</h3>
+        <p>Completa la vocal que falta en cada palabra. ¡Puedes repetir si te equivocas!</p>
+        <div class="exercise-progress"><span id="vowel-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de ejercicios de vocales" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="vowel-fill"></div></div></div>
+        <div class="vowel-exercise"><p id="vowel-question">¿Qué vocal falta?</p><div class="vowel-word" id="vowel-word">c_sa</div><div class="vowel-answers" id="vowel-answers" role="group" aria-label="Elige la vocal que falta"></div><p class="quiz-feedback" id="vowel-feedback" aria-live="polite">¡Elige la vocal que completa la palabra!</p></div>
+      </article>
+      <div class="level-finish"><span class="level-feedback" id="vowels-level-feedback">Resuelve los 30 ejercicios para continuar.</span><button class="button next-level" data-next-level="2" type="button" disabled>Ir al nivel 2: Lectura →</button></div>
+      </div>
+    </section>
+
+    <section class="section level-section" id="nivel-2" data-level="2">
+      <div class="section-heading">
+        <div><p class="eyebrow">Nivel 2 · Lectura</p><h2>Una historia para ti</h2><p>Escucha tres palabras y luego intenta repetirlas. ¡Tú puedes!</p></div>
+      </div>
+      <div class="level-lock" hidden>🔒 Primero completa el nivel anterior para entrar.</div>
+      <div class="level-content">
+      <div class="story-progress"><span id="story-count">Cuento 1 de 8</span><span id="story-read-count">0 de 8 cuentos completados</span></div>
+      <div class="story-layout">
+        <div class="card story-list" id="story-list" aria-label="Elige una historia"></div>
+        <article class="card reading-card">
+          <div class="reading-top"><h3 id="story-title">Mi zapato rojo</h3><span class="level">Lectura acompañada</span></div>
+          <div class="story-text" id="story-text" aria-live="polite"></div>
+          <div class="reading-controls">
+            <div class="progress-wrap"><span id="progress-label">Frase 1 de 1</span><div class="progress" role="progressbar" aria-label="Progreso de lectura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progress-fill"></div></div></div>
+            <button class="button" id="read-button" type="button">🔊 Escuchar y repetir</button>
+            <button class="button secondary" id="repeat-button" type="button">↻ Repetir frase</button>
+            <button class="button secondary" id="next-button" type="button">Siguiente frase →</button>
+            <button class="button secondary" id="next-story-button" type="button" hidden>Siguiente cuento →</button>
+          </div>
+          <p class="tip" id="reading-tip" aria-live="polite">Pulsa «Escuchar y repetir»: Lúmina dirá tres palabras y después te invitará a repetir.</p>
+        </article>
+      </div>
+      <div class="level-finish"><span class="level-feedback" id="reading-feedback">Lee los 8 cuentos completos para continuar.</span><button class="button next-level" data-next-level="3" type="button" disabled>Ir al nivel 3: Sumas →</button></div>
+      </div>
+    </section>
+
+    <section class="section level-section" id="nivel-3" data-level="3">
+      <div class="section-heading"><div><p class="eyebrow">Nivel 3 · Matemáticas</p><h2>¡Vamos a sumar!</h2><p>Sumar es juntar cantidades para saber cuántas hay en total.</p></div></div>
+      <div class="level-lock" hidden>🔒 Primero completa el nivel anterior para entrar.</div>
+      <div class="level-content">
+        <div class="math-grid">
+          <article class="card math-lesson"><span class="math-emoji">🍎 + 🍎</span><h3>Sumar paso a paso</h3><ol><li>Mira el primer número.</li><li>Cuenta el segundo número después de él.</li><li>El número donde terminas es el total.</li></ol><div class="worked-example"><strong>Ejemplo: 2 + 3</strong><span>Empieza en 2 y cuenta 3 más: 3, 4, 5. Entonces, <b>2 + 3 = 5</b>.</span></div></article>
+          <article class="card math-practice"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="sum-question">¿Cuánto es 2 + 1?</h3><p id="sum-hint">Puedes usar los dedos para contar. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="sum"><label class="sr-only" for="sum-answer">Tu respuesta para la suma</label><input id="sum-answer" type="number" min="0" max="30" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="sum-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de sumas" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="sum-fill"></div></div></div><p class="quiz-feedback" id="sum-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
+        </div>
+        <div class="level-finish"><span class="level-feedback" id="sum-level-feedback">Resuelve los 30 ejercicios para continuar.</span><button class="button next-level" data-next-level="4" type="button" disabled>Ir al nivel 4: Restas →</button></div>
+      </div>
+    </section>
+
+    <section class="section level-section" id="nivel-4" data-level="4">
+      <div class="section-heading"><div><p class="eyebrow">Nivel 4 · Matemáticas</p><h2>¡Ahora a restar!</h2><p>Restar es quitar una cantidad y descubrir cuántas quedan.</p></div></div>
+      <div class="level-lock" hidden>🔒 Primero completa el nivel anterior para entrar.</div>
+      <div class="level-content">
+        <div class="math-grid">
+          <article class="card math-lesson"><span class="math-emoji">🍪 − 🍪</span><h3>Restar paso a paso</h3><ol><li>Empieza con la cantidad grande.</li><li>Cuenta hacia atrás el número que vas a quitar.</li><li>El número donde llegas es lo que queda.</li></ol><div class="worked-example"><strong>Ejemplo: 5 − 2</strong><span>Empieza en 5 y cuenta 2 hacia atrás: 4, 3. Entonces, <b>5 − 2 = 3</b>.</span></div></article>
+          <article class="card math-practice"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="subtract-question">¿Cuánto es 3 − 1?</h3><p id="subtract-hint">Imagina que tienes objetos y quitas algunos. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="subtract"><label class="sr-only" for="subtract-answer">Tu respuesta para la resta</label><input id="subtract-answer" type="number" min="0" max="30" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="subtract-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de restas" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="subtract-fill"></div></div></div><p class="quiz-feedback" id="subtract-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
+        </div>
+        <div class="level-finish"><span class="level-feedback" id="subtract-level-feedback">Resuelve los 30 ejercicios para continuar.</span><button class="button next-level" data-next-level="5" type="button" disabled>Ir al nivel 5: Multiplicaciones →</button></div>
+      </div>
+    </section>
+
+    <section class="section level-section" id="nivel-5" data-level="5">
+      <div class="section-heading"><div><p class="eyebrow">Nivel 5 · Matemáticas</p><h2>¡A multiplicar!</h2><p>Multiplicar es sumar varias veces la misma cantidad.</p></div></div>
+      <div class="level-lock" hidden>🔒 Primero completa el nivel anterior para entrar.</div>
+      <div class="level-content">
+        <div class="math-grid">
+          <article class="card math-lesson"><span class="math-emoji">⭐ ⭐ ⭐</span><h3>Multiplicar paso a paso</h3><ol><li>El primer número dice cuántos grupos tienes.</li><li>El segundo número dice cuántos hay en cada grupo.</li><li>Suma los grupos para encontrar el total.</li></ol><div class="worked-example"><strong>Ejemplo: 2 × 3</strong><span>Son 2 grupos de 3: 3 + 3. Entonces, <b>2 × 3 = 6</b>.</span></div></article>
+          <article class="card math-practice"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="multiply-question">¿Cuánto es 2 × 2?</h3><p id="multiply-hint">Multiplicar es sumar varias veces la misma cantidad. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="multiply"><label class="sr-only" for="multiply-answer">Tu respuesta para la multiplicación</label><input id="multiply-answer" type="number" min="0" max="100" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="multiply-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de multiplicaciones" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="multiply-fill"></div></div></div><p class="quiz-feedback" id="multiply-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
+        </div>
+        <div class="level-finish"><span class="level-feedback" id="multiply-level-feedback">Resuelve los 30 ejercicios para terminar el último nivel.</span></div>
+      </div>
+    </section>
+
+    <section class="section diploma-section" id="diploma" hidden>
+      <article class="diploma">
+        <div class="diploma-stars" aria-hidden="true">✦　✧　✦</div>
+        <p class="eyebrow">¡Lo lograste!</p><h2>Diploma de aprendizaje</h2>
+        <p class="diploma-copy">Se entrega con mucho cariño a</p>
+        <label class="sr-only" for="learner-name">Escribe tu nombre para el diploma</label>
+        <input id="learner-name" class="learner-name" maxlength="40" placeholder="Escribe tu nombre">
+        <p class="diploma-copy">por completar los cinco niveles de lectura y matemáticas de Lúmina.</p>
+        <p class="diploma-congrats">¡Felicidades! Sigue aprendiendo y soñando en grande. 🌟</p>
+        <p class="diploma-signature">Con cariño, Lúmina</p>
+        <button class="button" id="print-diploma" type="button">🖨️ Imprimir mi diploma</button>
+      </article>
+    </section>
+
+    <section class="section lumina-section" id="pregunta">
+      <div class="section-heading">
+        <div><p class="eyebrow">Aquí estoy para ayudarte</p><h2>¿Tienes una pregunta?</h2></div>
+      </div>
+      <div class="card lumina-card">
+        <div class="lumina-intro">
+          <span class="lumina-face" aria-hidden="true">🌟</span>
+          <h2>¡Hola! Soy Lúmina</h2>
+          <p>Pregúntame sobre las vocales o las historias. Puedes escribir o tocar el micrófono y hablar conmigo.</p>
+          <p><strong>Por ejemplo:</strong> «¿Qué le pasó al zapato?» o «¿Cómo suena la E?»</p>
+          <button class="button secondary" id="voice-question" type="button" aria-label="Hablar con Lúmina">🎙️ Hablar con Lúmina</button>
+        </div>
+        <div class="chat-panel">
+          <div class="chat-messages" id="chat-messages" aria-live="polite" aria-label="Conversación con Lúmina">
+            <div class="message">¡Hola! Elige una historia o pregúntame algo. Estoy lista para ayudarte. 😊</div>
+          </div>
+          <form class="chat-form" id="chat-form">
+            <input id="chat-input" type="text" placeholder="Escribe aquí tu pregunta…" aria-label="Escribe tu pregunta" autocomplete="off">
+            <button class="icon-button" type="submit" aria-label="Enviar pregunta">➤</button>
+          </form>
+          <p class="chat-note" id="voice-status">El micrófono requiere permiso y un navegador compatible. También puedes escribir.</p>
         </div>
       </div>
-    </div>
-    <div class="welcome-backdrop" id="welcome-screen">
-      <div class="welcome-card">
-        <h2>¡Bienvenido a Meet In Record!</h2>
-        <p>Antes de entrar, dime cómo quieres que te llamen, cuántos años tienes y tu fecha de nacimiento.</p>
-        <form id="welcome-form" onsubmit="completeWelcome(event)">
-          <div class="welcome-field">
-            <label for="welcome-name">¿Cómo quieres que te llamen?</label>
-            <input id="welcome-name" class="welcome-input" type="text" placeholder="Tu nombre" />
-          </div>
-          <div class="welcome-field">
-            <label for="welcome-age">¿Cuántos años tienes?</label>
-            <input id="welcome-age" class="welcome-input" type="number" placeholder="Edad" min="1" />
-          </div>
-          <div class="welcome-field">
-            <label for="welcome-birthdate">Fecha de nacimiento</label>
-            <input id="welcome-birthdate" class="welcome-input" type="date" />
-          </div>
-          <div class="welcome-field">
-            <label for="welcome-photo">Foto de perfil (opcional)</label>
-            <input id="welcome-photo" class="welcome-input" type="file" accept="image/*" />
-          </div>
-          <button type="submit" class="welcome-button" id="welcome-start">Continuar</button>
-        </form>
-      </div>
-    </div>
+    </section>
+  </main>
+  <footer>Hecho con cariño para aprender, practicar y disfrutar de la lectura. ✨</footer>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics-compat.js"></script>
-    <script>
-      const initialServers = [
-        {
-          id: "d",
-          label: "D",
-          name: "Mi servidor",
-          title: "# general",
-          channels: ["# general", "# diseño", "# desarrollo"],
-          members: ["Tú"],
-          messages: [
-            { user: "Sistema", time: "10:42", text: "Hola, bienvenido al servidor principal." },
-            { user: "Sistema", time: "10:43", text: "Usa el panel de la izquierda para navegar." }
-          ]
-        },
-        {
-          id: "g",
-          label: "G",
-          name: "Grupo de diseño",
-          title: "# diseño",
-          channels: ["# diseño", "# recursos", "# feedback"],
-          members: ["Tú"],
-          messages: [
-            { user: "Sistema", time: "09:30", text: "Bienvenido al grupo de diseño." },
-            { user: "Sistema", time: "09:35", text: "Aquí podrás organizar tus ideas." }
-          ]
-        }
-      ];
+  <script>
+    const stories = [
+      { title: "Mi zapato rojo", author: "Mateo y el caracol", text: `Mateo tenía unos zapatos rojos que le encantaban. Saltaba, corría y jugaba con ellos todo el día.
 
-      const initialCategories = [
-        {
-          id: "cat-minecraft",
-          name: "Minecraft",
-          teams: [
-            { id: "team-survival", name: "Survival", description: "Exploración, minería y construcción", members: ["Tú"], code: "MINE-7K2P9A", createdByMe: true, joined: true },
-            { id: "team-builders", name: "Builders", description: "Construcción avanzada y diseño", members: [], code: "MINE-4Q1Z2T", createdByMe: false, joined: false }
-          ]
-        },
-        {
-          id: "cat-fortnite",
-          name: "Fortnite",
-          teams: [{ id: "team-squad", name: "Squad Arena", description: "Partidas en equipo y estrategias", members: [], code: "FORT-8M3C1L", createdByMe: false, joined: false }]
-        }
-      ];
+Una tarde, al volver del parque, notó que le faltaba uno.
+—¡Oh, no! —dijo triste—. ¡Mi zapato rojo!
 
-      const defaultState = {
-        mode: "servers",
-        servers: [...initialServers],
-        selectedServerId: "d",
-        categories: initialCategories,
-        selectedCategoryId: initialCategories[0].id,
-        categorySearch: "",
-        peopleSearch: "",
-        modalType: "server",
-        userProfile: null,
-        registeredUsers: [],
-        peopleCallActiveIds: []
-      };
+Buscó debajo del columpio, entre las flores y bajo el banco. Nada. El zapato se había quedado dormido bajo un árbol.
 
-      let state = { ...defaultState };
+Esa noche un caracol lo encontró y lo usó como casa.
+—Aquí estaré seco —dijo el caracol feliz.
 
-      const serverListEl = document.getElementById("server-list");
-      const contentAreaEl = document.getElementById("content-area");
-      const sidebarPanelEl = document.getElementById("sidebar-panel");
-      const channelListEl = document.getElementById("channel-list");
-      const teamCardAreaEl = document.getElementById("team-card-area");
-      const serverNameEl = document.getElementById("server-name");
-      const currentChannelEl = document.getElementById("current-channel");
-      const topbarTextEl = document.getElementById("topbar-text");
-      const modalEl = document.getElementById("create-modal");
-      const modalTitleEl = document.getElementById("modal-title");
-      const modalDescriptionEl = document.getElementById("modal-description");
-      const modalInputEl = document.getElementById("modal-input");
-      const modalInput2El = document.getElementById("modal-input-2");
-      const modalInput3El = document.getElementById("modal-input-3");
-      const modalTextareaEl = document.getElementById("modal-textarea");
-      const modalNoticeEl = document.getElementById("modal-notice");
-      const confirmCreateBtn = document.getElementById("confirm-create");
-      const cancelCreateBtn = document.getElementById("cancel-create");
-      const welcomeScreenEl = document.getElementById("welcome-screen");
-      const welcomeFormEl = document.getElementById("welcome-form");
-      const welcomeNameEl = document.getElementById("welcome-name");
-      const welcomeAgeEl = document.getElementById("welcome-age");
-      const welcomeBirthdateEl = document.getElementById("welcome-birthdate");
-      const welcomePhotoEl = document.getElementById("welcome-photo");
-      const welcomeStartBtn = document.getElementById("welcome-start");
+A la mañana siguiente, Mateo volvió al parque.
+—¡Mi zapato! —gritó al verlo. Le sacudió las hojas y vio al caracol.
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyAFtouLuWscwR_cypYZoaqQvFWux84J9PA",
-        authDomain: "meet-in-record.firebaseapp.com",
-        projectId: "meet-in-record",
-        storageBucket: "meet-in-record.firebasestorage.app",
-        messagingSenderId: "883645565107",
-        appId: "1:883645565107:web:7efc9634c77760b5a6c8c6",
-        measurementId: "G-M1BQ4P22K4"
-      };
+—Perdón —dijo Mateo—, pero este zapato es mío.
+—Lo sé —respondió el caracol—. Ya encontré otra hoja para vivir.
 
-      const storageKey = "meet-in-record-state-v1";
-      const profileKey = "meet-in-record-profile";
-      let firestore = null;
-      let appStateRef = null;
-      let firebaseAvailable = false;
-      const userAvatarEl = document.querySelector(".user-card .avatar");
-      const userNameStaticEl = document.querySelector(".user-card .user-name");
-      const userStatusEl = document.querySelector(".user-card .user-status");
-      const micButtonEl = document.getElementById("mic-btn");
-      const configuration = {
-        iceServers: [
-          {
-            urls: [
-              "stun:stun1.l.google.com:19302",
-              "stun:stun2.l.google.com:19302",
-            ],
-          },
-        ],
-        iceCandidatePoolSize: 10,
-      };
-      let peerConnection = null;
-      let localStream = null;
-      let remoteStream = null;
+Mateo sonrió. Desde entonces, cada vez que iba al parque, saludaba a su amigo el caracol.` },
+      { title: "Lina y la liebre", author: "Una carrera especial", text: `Lina era una tortuga tranquila, muy tranquila. Pero un día escuchó a una liebre decir:
+—Las tortugas son lentas, lentas como el viento dormido.
+
+Lina se sintió retada.
+—Hoy correré como el viento despierto —pensó.
+
+Al amanecer, se preparó: estiró sus patas, respiró hondo y empezó a moverse más rápido que nunca.
+No era tan veloz como la liebre, pero avanzaba sin parar.
+
+Los animales la animaban:
+—¡Vamos, Lina! ¡Tú puedes!
+
+Cuando llegó al final del camino, todos aplaudieron. La liebre bajó las orejas.
+—Eres lenta… pero no te rindes.
+
+Lina sonrió.
+—Y eso me hace llegar siempre.` },
+      { title: "Bruno y la pelota", author: "Un erizo ingenioso", text: `Bruno, el erizo, quería jugar con la pelota de los conejos. Pero cada vez que la tocaba, se pinchaba.
+—¡Ay! —decía triste—. Nunca podré jugar.
+
+Los conejos pensaron un momento.
+—Podemos cubrirte con hojas suaves —dijeron.
+
+Bruno se envolvió y volvió a intentarlo. Esta vez la pelota rodó sin pincharse.
+—¡Lo logré! —gritó contento.
+
+Desde ese día el erizo juega cada tarde con sus amigos, vestido con su traje de hojas.` },
+      { title: "Leo quiere volar", author: "Un pez con imaginación", text: `Había un pez llamado Leo que vivía en un lago tranquilo. Cada día miraba el cielo y suspiraba.
+—Qué bonito sería tener alas —decía—.
+
+Los otros peces se reían.
+—¡Pero si naciste para nadar! —le decían.
+
+Un día, el viento sopló fuerte y una hoja cayó al agua. Leo se subió encima y el viento la levantó un poco.
+Por un instante, el pez sintió que volaba.
+
+Cuando la hoja volvió al agua, Leo sonrió.
+—No tengo alas, pero puedo imaginar —pensó.
+
+Desde entonces, cada vez que saltaba fuera del lago, decía:
+—¡Estoy volando!` },
+      { title: "El árbol y el viento", author: "Aprender a bailar", text: `En un valle vivía un árbol alto y fuerte. Cada día llegaba el viento y lo movía con fuerza.
+—¡No me empujes tanto! —decía el árbol—. ¡Me harás caer!
+
+Pero el viento respondía:
+—Sólo te ayudo a bailar.
+
+Pasaron los días y el árbol se acostumbró al viento. Aprendió a balancear sus ramas y a dejar pasar el aire entre las hojas.
+
+Un día vino una gran tormenta. El árbol se dobló, pero no se rompió. El viento lo sostuvo con cuidado y juntos resistieron.
+
+Desde entonces, el árbol comprendió que el viento era su amigo y lo había ayudado a resistir la tormenta.` },
+      { title: "El paraguas de Vanesa", author: "Una nueva idea", text: `Vanesa tenía un paraguas amarillo que usaba solo cuando llovía. Un día salió el sol después de una gran tormenta y el paraguas se quedó triste en un rincón.
+—Ya nadie me necesita —pensó.
+
+Entonces Vanesa tuvo una idea. Lo abrió en el jardín y lo llenó de flores.
+—Ahora eres una sombrilla de colores —le dijo.
+
+El paraguas sonrió bajo el sol. Había encontrado una nueva forma de ser útil.` },
+      { title: "El globo de Clara", author: "Una estrella en el cielo", text: `Clara tenía un globo rojo que la acompañaba a todas partes. Un día el viento sopló fuerte y el globo se escapó de su mano.
+—¡Vuelve, globo! —gritó Clara.
+
+El globo subió alto, muy alto, hasta que se perdió entre las nubes. Clara lo miró con tristeza.
+
+Esa noche, miró el cielo y vio una estrella que brillaba más que las otras.
+—Parece mi globo —susurró.
+
+Y desde entonces, cada vez que veía esa estrella, decía:
+—Ahí está mi amigo, cuidando el cielo.` },
+      { title: "La cometa de Sofía", author: "El pajarito ayudante", text: `Sofía tenía una cometa de colores. Le encantaba verla volar alto, muy alto, entre las nubes.
+
+Un día el viento sopló con fuerza y la cometa se soltó del hilo.
+
+—¡Oh, no! —gritó Sofía—. ¡Mi cometa!
+
+La cometa voló lejos, cruzó árboles, techos y montañas. Aterrizó en un campo y quedó atrapada en una rama. Un pajarito la vio y se acercó.
+
+—¿Qué haces aquí, cometa? —preguntó el pájaro.
+—El viento me trajo —respondió triste—. Quiero volver con Sofía.
+
+El pájaro la miró con ternura.
+—Yo puedo ayudarte.
+
+El pajarito voló hasta el pueblo y encontró a Sofía.
+—Tu cometa está en el campo —le dijo.
+
+Sofía corrió con alegría y cuando vio su cometa la abrazó fuerte.
+—Gracias, pajarito. Gracias viento por devolverme algo tan querido.
+
+Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junto a la cometa azul.` }
+    ];
+
+    const vowelExamples = { A: "A de árbol", E: "E de estrella", I: "I de isla", O: "O de oso", U: "U de uvas" };
+    const synth = window.speechSynthesis;
+    let currentStory = 0;
+    let phrases = [];
+    let phraseIndex = 0;
+    let recognition = null;
+    const levelNames = ["Vocales", "Lectura", "Sumas", "Restas", "Multiplicaciones"];
+    const progressKey = "lumina-learning-progress-v1";
+    const profileKey = "lumina-learner-profile-v1";
+    const authorizedEmails = new Set([
+      "agustinroberto261713@gmail.com",
+      "cristobal.barrios.nu@liceoavb.cl",
+      "paulo.diaz@liceoavb.cl",
+      "sofia.aros.ar@liceoavb.cl",
+      "juan.diaz@liceoavb.cl"
+    ]);
+    let learner = null;
+    let privilegedAccess = false;
+    let completedLevels = [];
+    let currentLevel = 1;
+    let vowelIndex = 0;
+    const completedStories = new Set();
+    let readingComplete = false;
+    const quizzes = {
+      sum: { count: 0, left: 2, right: 1 },
+      subtract: { count: 0, left: 3, right: 1 },
+      multiply: { count: 0, left: 2, right: 2 }
+    };
+    const vowelExercises = [
+      ["casa", 1], ["mesa", 1], ["pino", 1], ["lobo", 1], ["luna", 1],
+      ["gato", 1], ["pera", 1], ["isla", 0], ["mono", 1], ["uva", 0],
+      ["pato", 1], ["dedo", 1], ["nido", 1], ["sopa", 1], ["tubo", 1],
+      ["rana", 1], ["leche", 1], ["pila", 1], ["foca", 1], ["mula", 1],
+      ["taza", 1], ["vela", 1], ["niña", 1], ["queso", 1], ["rama", 1],
+      ["pelo", 1], ["piso", 1], ["boca", 1], ["suma", 1], ["nube", 1]
+    ];
+
+    function saveProgress() {
+      if (!learner) return;
+      localStorage.setItem(`${progressKey}:${learner.email}`, JSON.stringify({
+        completed: completedLevels,
+        stories: [...completedStories],
+        vowelIndex,
+        quizzes: Object.fromEntries(Object.entries(quizzes).map(([key, quiz]) => [key, quiz.count]))
+      }));
+    }
+
+    function loadProgress(profile) {
+      let saved = {};
       try {
-        if (typeof firebase !== "undefined") {
-          firebase.initializeApp(firebaseConfig);
-          firebase.analytics();
-          firestore = firebase.firestore();
-          appStateRef = firestore.collection("appData").doc("main");
-          firebaseAvailable = true;
-        }
+        saved = JSON.parse(localStorage.getItem(`${progressKey}:${profile.email}`) || "{}");
       } catch (error) {
-        console.warn("Firebase no disponible, usando modo local.", error);
+        localStorage.removeItem(`${progressKey}:${profile.email}`);
       }
-
-      function saveStateToFirebase() {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(state));
-        } catch (error) {
-          console.warn("No se pudo guardar localmente", error);
-        }
-
-        if (!firebaseAvailable || !appStateRef) return;
-
-        appStateRef.set({
-          ...state,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(() => {});
-      }
-
-      function loadStateFromFirebase() {
-        let localProfile = null;
-        try {
-          const saved = localStorage.getItem(storageKey);
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            state = {
-              ...defaultState,
-              ...parsed,
-              servers: parsed.servers || defaultState.servers,
-              categories: parsed.categories || defaultState.categories
-            };
-          }
-
-          const savedProfile = localStorage.getItem(profileKey);
-          if (savedProfile) {
-            localProfile = JSON.parse(savedProfile);
-            state.userProfile = localProfile;
-            if (localProfile.id && !state.registeredUsers.some((user) => user.id === localProfile.id)) {
-              state.registeredUsers.push(localProfile);
-            }
-          }
-        } catch (error) {
-          console.warn("No se pudo cargar el estado guardado", error);
-        }
-
-        render();
-        if (!state.userProfile) {
-          showWelcome();
-        } else {
-          hideWelcome();
-        }
-
-        if (!firebaseAvailable || !appStateRef) {
-          return;
-        }
-
-        appStateRef.onSnapshot((snapshot) => {
-          if (snapshot.exists) {
-            const data = snapshot.data();
-            const savedProfile = localStorage.getItem(profileKey);
-            const localProfile = savedProfile ? JSON.parse(savedProfile) : null;
-            state = {
-              ...defaultState,
-              ...data,
-              servers: data.servers || defaultState.servers,
-              categories: data.categories || defaultState.categories,
-              userProfile: localProfile || data.userProfile || null
-            };
-            render();
-            if (!state.userProfile) {
-              showWelcome();
-            } else {
-              hideWelcome();
-            }
-          } else {
-            saveStateToFirebase();
-            render();
-            if (!state.userProfile) {
-              showWelcome();
-            } else {
-              hideWelcome();
-            }
-          }
-        }, () => {
-          if (state.userProfile) render();
-        });
-      }
-
-      function showWelcome() {
-        welcomeScreenEl.classList.add("show");
-        welcomeScreenEl.style.display = "flex";
-        welcomeNameEl.focus();
-      }
-
-      function hideWelcome() {
-        welcomeScreenEl.classList.remove("show");
-        welcomeScreenEl.style.display = "none";
-      }
-
-      function resetProfile() {
-        state.userProfile = null;
-        try {
-          localStorage.removeItem(profileKey);
-        } catch (error) {
-          console.warn("No se pudo borrar el perfil", error);
-        }
-        showWelcome();
-        render();
-      }
-
-      function displayName(name) {
-        if (name === "Tú" && state.userProfile?.name) {
-          return state.userProfile.name;
-        }
-        return name;
-      }
-
-      function updateUserCard() {
-        if (!userAvatarEl || !userNameStaticEl || !userStatusEl) return;
-        if (state.userProfile) {
-          userNameStaticEl.textContent = state.userProfile.name;
-          userStatusEl.textContent = `Edad ${state.userProfile.age}`;
-          if (state.userProfile.photo) {
-            userAvatarEl.style.backgroundImage = `url(${state.userProfile.photo})`;
-            userAvatarEl.style.backgroundSize = "cover";
-            userAvatarEl.textContent = "";
-          } else {
-            userAvatarEl.style.backgroundImage = "";
-            userAvatarEl.textContent = state.userProfile.name.charAt(0).toUpperCase();
-          }
-        } else {
-          userNameStaticEl.textContent = "Invitado";
-          userStatusEl.textContent = "Sin sesión";
-          userAvatarEl.style.backgroundImage = "";
-          userAvatarEl.textContent = "U";
-        }
-      }
-
-      function saveProfile(profile) {
-        if (!profile.id) {
-          profile.id = `user-${Date.now()}`;
-        }
-        state.userProfile = profile;
-        const existingIndex = state.registeredUsers.findIndex((user) => user.id === profile.id);
-        if (existingIndex === -1) {
-          state.registeredUsers.push(profile);
-        } else {
-          state.registeredUsers[existingIndex] = profile;
-        }
-        try {
-          localStorage.setItem(profileKey, JSON.stringify(profile));
-          localStorage.setItem(storageKey, JSON.stringify(state));
-        } catch (error) {
-          console.warn("No se pudo guardar el perfil", error);
-        }
-        saveStateToFirebase();
-      }
-
-      function togglePersonCall(userId) {
-        const index = state.peopleCallActiveIds.indexOf(userId);
-        if (index === -1) {
-          state.peopleCallActiveIds.push(userId);
-        } else {
-          state.peopleCallActiveIds.splice(index, 1);
-        }
-        saveStateToFirebase();
-        render();
-      }
-
-      async function openUserMedia() {
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: false
-          });
-          console.log("Micrófono activado");
-          if (userStatusEl) {
-            userStatusEl.textContent = "Micrófono activado";
-          }
-          if (micButtonEl) {
-            micButtonEl.style.color = "#43b581";
-          }
-          // Optionally initialize PeerConnection for future voice features
-          peerConnection = new RTCPeerConnection(configuration);
-          localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
-        } catch (error) {
-          console.error("No se pudo activar el micrófono", error);
-          window.alert("No se pudo activar el micrófono. Revisa permisos de audio.");
-        }
-      }
-
-      function logoff() {
-        state.userProfile = null;
-        try {
-          localStorage.removeItem(profileKey);
-        } catch (error) {
-          console.warn("No se pudo borrar el perfil", error);
-        }
-        saveStateToFirebase();
-        showWelcome();
-        render();
-      }
-
-      function completeWelcome(event) {
-        if (event) event.preventDefault();
-        const name = welcomeNameEl.value.trim();
-        const age = Number(welcomeAgeEl.value);
-        const birthdate = welcomeBirthdateEl.value;
-        const photoFile = welcomePhotoEl.files && welcomePhotoEl.files[0];
-
-        if (!name) {
-          window.alert("Por favor escribe tu nombre.");
-          return;
-        }
-        if (!age || age <= 0) {
-          window.alert("Por favor escribe tu edad correcta.");
-          return;
-        }
-        if (!birthdate) {
-          window.alert("Por favor selecciona tu fecha de nacimiento.");
-          return;
-        }
-
-        const profile = { id: `user-${Date.now()}`, name, age, birthdate };
-        const finishRegistration = () => {
-          saveProfile(profile);
-          state.mode = "servers";
-          state.selectedServerId = state.selectedServerId || state.servers[0]?.id;
-          hideWelcome();
-          render();
-        };
-
-        if (photoFile) {
-          const reader = new FileReader();
-          reader.onload = function(event) {
-            profile.photo = event.target.result;
-            finishRegistration();
-          };
-          reader.readAsDataURL(photoFile);
-        } else {
-          finishRegistration();
-        }
-      }
-
-      if (welcomeFormEl) {
-        welcomeFormEl.addEventListener("submit", (event) => {
-          event.preventDefault();
-          completeWelcome();
-        });
-      }
-
-      if (welcomeStartBtn) {
-        welcomeStartBtn.addEventListener("click", completeWelcome);
-      }
-
-      if (micButtonEl) {
-        micButtonEl.addEventListener("click", openUserMedia);
-      }
-
-      document.body.addEventListener("click", (event) => {
-        const button = event.target.closest("button[data-person-id]");
-        if (!button) return;
-        const userId = button.getAttribute("data-person-id");
-        if (!userId) return;
-        togglePersonCall(userId);
+      completedLevels = Array.isArray(saved.completed) ? saved.completed.filter(level => Number.isInteger(level) && level >= 1 && level <= 5) : [];
+      completedStories.clear();
+      if (Array.isArray(saved.stories)) saved.stories.forEach(index => {
+        if (Number.isInteger(index) && index >= 0 && index < stories.length) completedStories.add(index);
       });
-
-      function renderServerButtons() {
-        const buttonsHtml = state.servers.map((server) => {
-          const isActive = state.mode === "servers" && server.id === state.selectedServerId;
-          return `<button class="server-icon${isActive ? " active" : ""}" data-server-id="${server.id}" title="${server.name}">${server.label}</button>`;
-        }).join("");
-
-        serverListEl.innerHTML = `${buttonsHtml}<button class="server-icon${state.mode === "people" ? " active" : ""}" id="people-btn" title="Personas">P</button><button class="server-icon${state.mode === "teams" ? " active team" : " team"}" id="teams-btn" title="Teams">T</button><button class="server-icon" id="create-server-btn" title="Crear servidor">+</button>`;
-      }
-
-      function renderServerView() {
-        const server = state.servers.find((item) => item.id === state.selectedServerId);
-        if (!server) return;
-
-        sidebarPanelEl.style.display = "flex";
-        serverNameEl.textContent = server.name;
-        currentChannelEl.textContent = server.title;
-        topbarTextEl.innerHTML = `Bienvenido, ${state.userProfile?.name || "invitado"} <button class="action-btn secondary" data-action="change-profile">Cambiar perfil</button> <button class="action-btn secondary" data-action="logoff">Cerrar sesión</button>`;
-
-        channelListEl.innerHTML = `
-          <div class="group-title">Canales de texto</div>
-          ${server.channels.map((channel) => `<button class="channel active">${channel}</button>`).join("")}
-          <div class="group-title">Canales de voz</div>
-          <button class="channel">🔊 Sala principal</button>
-          <button class="channel">🎮 Gaming</button>
-        `;
-
-        teamCardAreaEl.innerHTML = "";
-
-        contentAreaEl.innerHTML = `
-          <section class="messages">
-            <div class="message-list">
-              ${server.messages.map((message) => `
-                <div class="message">
-                  <div class="avatar">${displayName(message.user).charAt(0).toUpperCase()}</div>
-                  <div class="message-body">
-                    <div class="meta">
-                      <strong>${displayName(message.user)}</strong>
-                      <span>${message.time}</span>
-                    </div>
-                    <div>${message.text}</div>
-                  </div>
-                </div>
-              `).join("")}
-            </div>
-            <div class="composer">
-              <div class="composer-box">
-                <span>💬</span>
-                <input id="message-input" type="text" placeholder="Escribe un mensaje en ${server.title}" />
-              </div>
-            </div>
-          </section>
-          <aside class="member-panel">
-            <div class="panel-title">En línea (${server.members.length})</div>
-            ${server.members.map((member) => `<div class="member"><span class="dot"></span> ${displayName(member)}</div>`).join("")}
-            <div class="voice-card">
-              <strong>Voz</strong>
-              El panel de audio y micrófono aparecerá aquí después.
-              <span class="pill">Próximamente</span>
-            </div>
-          </aside>
-        `;
-
-        const messageInput = document.getElementById("message-input");
-        if (messageInput) {
-          messageInput.addEventListener("keydown", (event) => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            const text = messageInput.value.trim();
-            if (!text) return;
-            const currentName = state.userProfile?.name || "Tú";
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const server = state.servers.find((item) => item.id === state.selectedServerId);
-            if (!server) return;
-            if (!server.members.includes(currentName)) {
-              server.members.push(currentName);
-            }
-            server.messages.push({ user: currentName, time, text });
-            messageInput.value = "";
-            saveStateToFirebase();
-            render();
-          });
-        }
-      }
-
-      function getSelectedCategory() {
-        return state.categories.find((category) => category.id === state.selectedCategoryId) || state.categories[0];
-      }
-
-      function refreshTeamsContent() {
-        const selectedCategory = getSelectedCategory();
-        const filteredCategories = state.categories.filter((category) =>
-          category.name.toLowerCase().includes(state.categorySearch.toLowerCase())
-        );
-
-        const categoriesListEl = document.getElementById("categories-list");
-        const teamsPanelContentEl = document.getElementById("teams-panel-content");
-        const teamsCountEl = document.getElementById("teams-count");
-
-        if (categoriesListEl) {
-          categoriesListEl.innerHTML = filteredCategories.length
-            ? filteredCategories.map((category) => `
-                <button class="category-item${category.id === selectedCategory?.id ? " active" : ""}" data-category-id="${category.id}">
-                  <span class="name">${category.name}</span>
-                  <div class="meta">${category.teams.length} team${category.teams.length === 1 ? "" : "s"}</div>
-                </button>
-              `).join("")
-            : `<div class="empty-state">No hay categorías que coincidan con la búsqueda.</div>`;
-        }
-
-        if (teamsCountEl) {
-          teamsCountEl.textContent = `${selectedCategory ? selectedCategory.teams.length : 0} teams`;
-        }
-
-        if (teamsPanelContentEl) {
-          teamsPanelContentEl.innerHTML = selectedCategory && selectedCategory.teams.length
-            ? `<div class="teams-grid">${selectedCategory.teams.map((team) => `
-                <div class="team-card-item">
-                  <h4>${team.name}</h4>
-                  <p>${team.description}</p>
-                  <div class="team-pill">${team.members.length} miembro${team.members.length === 1 ? '' : 's'}</div>
-                  <div class="team-actions">
-                    ${team.createdByMe ? `<button class="share-btn" data-team-id="${team.id}">Compartir código</button>` : `<button class="join-btn" data-team-id="${team.id}">${team.joined ? "Ya estás dentro" : "Unirse al team"}</button>`}
-                  </div>
-                </div>
-              `).join("")}</div>`
-            : `<div class="empty-state">Esta categoría aún no tiene teams. Crea uno desde el botón de arriba.</div>`;
-        }
-      }
-
-      function generateTeamCode(prefix = "TEAM") {
-        const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-        return `${prefix}-${randomPart}`;
-      }
-
-      function renderTeamsView() {
-        const selectedCategory = getSelectedCategory();
-        sidebarPanelEl.style.display = "none";
-        currentChannelEl.textContent = "Teams";
-        topbarTextEl.innerHTML = `Hola, ${state.userProfile?.name || "invitado"} <button class="action-btn secondary" data-action="change-profile">Cambiar perfil</button> <button class="action-btn secondary" data-action="logoff">Cerrar sesión</button>`;
-
-        contentAreaEl.innerHTML = `
-          <section class="teams-view">
-            <div class="teams-toolbar">
-              <div class="search-box">
-                <span>🔎</span>
-                <input id="category-search" type="text" value="${state.categorySearch}" placeholder="Buscar categorías" />
-              </div>
-              <div>
-                <button class="action-btn secondary" id="create-category-btn">Crear categoría</button>
-                <button class="action-btn primary" id="create-team-btn">Crear team</button>
-              </div>
-            </div>
-            <div class="teams-layout">
-              <div class="categories-panel">
-                <h3 style="margin:0 0 10px">Categorías</h3>
-                <div id="categories-list"></div>
-              </div>
-              <div class="teams-panel">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <h3 style="margin:0">${selectedCategory ? selectedCategory.name : "Selecciona una categoría"}</h3>
-                  <span class="team-pill" id="teams-count">${selectedCategory ? `${selectedCategory.teams.length} teams` : "0 teams"}</span>
-                </div>
-                <div id="teams-panel-content"></div>
-              </div>
-            </div>
-          </section>
-        `;
-
-        document.getElementById("category-search").addEventListener("input", (event) => {
-          state.categorySearch = event.target.value;
-          refreshTeamsContent();
-        });
-
-        document.getElementById("categories-list").addEventListener("click", (event) => {
-          const button = event.target.closest(".category-item");
-          if (!button) return;
-          state.selectedCategoryId = button.getAttribute("data-category-id");
-          refreshTeamsContent();
-        });
-
-        document.getElementById("create-category-btn").addEventListener("click", () => openModal("category"));
-        document.getElementById("create-team-btn").addEventListener("click", () => openModal("team"));
-
-        refreshTeamsContent();
-
-        document.querySelectorAll(".join-btn").forEach((button) => {
-          button.addEventListener("click", (event) => {
-            const teamId = event.currentTarget.getAttribute("data-team-id");
-            const team = state.categories.flatMap((category) => category.teams).find((item) => item.id === teamId);
-            if (!team) return;
-
-            const enteredCode = window.prompt("Ingresa el código del team");
-            if (!enteredCode) return;
-
-            if (enteredCode.trim().toUpperCase() === team.code.toUpperCase()) {
-              if (!team.members.includes("Tú")) {
-                team.members.push("Tú");
-              }
-              team.joined = true;
-              saveStateToFirebase();
-              render();
-            } else {
-              window.alert("Código incorrecto");
-            }
-          });
-        });
-
-        document.querySelectorAll(".share-btn").forEach((button) => {
-          button.addEventListener("click", async (event) => {
-            const teamId = event.currentTarget.getAttribute("data-team-id");
-            const team = state.categories.flatMap((category) => category.teams).find((item) => item.id === teamId);
-            if (!team) return;
-
-            try {
-              await navigator.clipboard.writeText(team.code);
-              event.currentTarget.textContent = "¡Código copiado!";
-              setTimeout(() => {
-                event.currentTarget.textContent = "Compartir código";
-              }, 1400);
-            } catch {
-              window.alert(`Código del team: ${team.code}`);
-            }
-          });
-        });
-      }
-
-      function renderPeopleView() {
-        sidebarPanelEl.style.display = "none";
-        currentChannelEl.textContent = "Personas";
-        const activeCount = state.peopleCallActiveIds.length;
-        topbarTextEl.innerHTML = `Personas registradas (${state.registeredUsers.length}) <button class="action-btn secondary" data-action="change-profile">Cambiar perfil</button> <button class="action-btn secondary" data-action="logoff">Cerrar sesión</button>`;
-
-        const filteredUsers = state.registeredUsers.filter((user) => user.name.toLowerCase().includes(state.peopleSearch.toLowerCase()));
-        const peopleListHtml = filteredUsers.length
-          ? `<div class="teams-grid">${filteredUsers
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((user) => {
-                const isActive = state.peopleCallActiveIds.includes(user.id);
-                return `
-                  <div class="team-card-item" style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                      <div>
-                        <strong>${user.name}</strong>
-                        <div style="font-size:12px; color: var(--muted);">Edad ${user.age} · ${user.birthdate}</div>
-                      </div>
-                      <button class="share-btn" data-person-id="${user.id}" style="background:${isActive ? '#43b581' : '#5865f2'};">
-                        ${isActive ? 'Llamando' : 'Llamar'}
-                      </button>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      <div class="avatar" style="width:40px; height:40px; font-size:16px; ${user.photo ? `background-image:url(${user.photo}); background-size:cover;` : ''}">${user.photo ? '' : user.name.charAt(0).toUpperCase()}</div>
-                      <div style="font-size:13px; color:var(--muted);">${user.name} está ${isActive ? 'en llamada' : 'disponible'}</div>
-                    </div>
-                  </div>
-                `;
-              })}</div>`
-          : `<div class="empty-state">No hay personas registradas aún.</div>`;
-
-        contentAreaEl.innerHTML = `
-          <section class="teams-view">
-            <div class="teams-toolbar">
-              <div class="search-box">
-                <span>👥</span>
-                <input id="people-search" type="text" placeholder="Buscar personas..." />
-              </div>
-              <div class="team-pill">Llamando a ${activeCount} persona${activeCount === 1 ? '' : 's'}</div>
-            </div>
-            <div class="teams-layout">
-              <div class="teams-panel" style="width:100%;">
-                ${peopleListHtml}
-              </div>
-            </div>
-          </section>
-        `;
-
-        const peopleSearchEl = document.getElementById("people-search");
-        if (peopleSearchEl) {
-          peopleSearchEl.value = state.peopleSearch || "";
-          peopleSearchEl.addEventListener("input", (event) => {
-            state.peopleSearch = event.target.value;
-            renderPeopleView();
-          });
-        }
-      }
-
-      function render() {
-        renderServerButtons();
-        updateUserCard();
-        if (state.mode === "teams") {
-          renderTeamsView();
-        } else if (state.mode === "people") {
-          renderPeopleView();
-        } else {
-          renderServerView();
-        }
-      }
-
-      function selectServer(id) {
-        state.mode = "servers";
-        state.selectedServerId = id;
-        render();
-      }
-
-      function openModal(type) {
-        state.modalType = type;
-        modalEl.classList.add("show");
-        modalInputEl.value = "";
-        modalTextareaEl.value = "";
-        modalNoticeEl.textContent = "";
-
-        if (type === "category") {
-          modalTitleEl.textContent = "Crear una categoría";
-          modalDescriptionEl.textContent = "Escribe el nombre de la nueva categoría de teams.";
-          modalInputEl.placeholder = "Nombre de la categoría";
-          modalTextareaEl.style.display = "none";
-        } else if (type === "team") {
-          modalTitleEl.textContent = "Crear un team";
-          modalDescriptionEl.textContent = "Escribe el nombre y descripción del nuevo team.";
-          modalInputEl.placeholder = "Nombre del team";
-          modalTextareaEl.style.display = "block";
-          modalTextareaEl.placeholder = "Descripción del team";
-        } else {
-          modalTitleEl.textContent = "Crear un nuevo servidor";
-          modalDescriptionEl.textContent = "Escribe el nombre del servidor que quieres crear.";
-          modalInputEl.placeholder = "Nombre del servidor";
-          modalTextareaEl.style.display = "none";
-        }
-
-        modalInputEl.focus();
-      }
-
-      function closeModal() {
-        modalEl.classList.remove("show");
-        modalNoticeEl.textContent = "";
-      }
-
-      function createServer() {
-        const name = modalInputEl.value.trim();
-        if (!name) return;
-
-        const currentName = state.userProfile?.name || "Tú";
-        const newServer = {
-          id: `srv-${Date.now()}`,
-          label: name.charAt(0).toUpperCase(),
-          name,
-          title: "# general",
-          channels: ["# general", "# chat", "# novedades"],
-          members: [currentName],
-          messages: [{ user: currentName, time: "ahora", text: `Bienvenido a ${name}.` }]
-        };
-
-        state.servers.push(newServer);
-        state.mode = "servers";
-        state.selectedServerId = newServer.id;
-        saveStateToFirebase();
-        closeModal();
-        render();
-      }
-
-      function createCategory() {
-        const name = modalInputEl.value.trim();
-        if (!name) return;
-
-        const exists = state.categories.some((category) => category.name.toLowerCase() === name.toLowerCase());
-        if (exists) {
-          modalNoticeEl.textContent = "Ese nombre de categoría ya existe.";
-          return;
-        }
-
-        state.categories.unshift({ id: `cat-${Date.now()}`, name, teams: [] });
-        state.selectedCategoryId = state.categories[0].id;
-        saveStateToFirebase();
-        closeModal();
-        render();
-      }
-
-      function createTeam() {
-        const name = modalInputEl.value.trim();
-        const description = modalTextareaEl.value.trim();
-        if (!name) return;
-
-        const category = state.categories.find((item) => item.id === state.selectedCategoryId) || state.categories[0];
-        if (!category) return;
-
-        const currentName = state.userProfile?.name || "Tú";
-        category.teams.push({ id: `team-${Date.now()}`, name, description: description || "Team creado recientemente", members: [currentName], code: generateTeamCode(name.slice(0, 4).toUpperCase()), createdByMe: true, joined: true });
-        saveStateToFirebase();
-        closeModal();
-        render();
-      }
-
-      function confirmModalAction() {
-        if (state.modalType === "server") createServer();
-        if (state.modalType === "category") createCategory();
-        if (state.modalType === "team") createTeam();
-      }
-
-      serverListEl.addEventListener("click", (event) => {
-        const button = event.target.closest("button");
-        if (!button) return;
-
-        if (button.id === "create-server-btn") {
-          openModal("server");
-          return;
-        }
-
-        if (button.id === "people-btn") {
-          state.mode = "people";
-          render();
-          return;
-        }
-
-        if (button.id === "teams-btn") {
-          state.mode = "teams";
-          render();
-          return;
-        }
-
-        const serverId = button.getAttribute("data-server-id");
-        if (serverId) selectServer(serverId);
+      vowelIndex = Math.min(Number(saved.vowelIndex) || 0, vowelExercises.length);
+      Object.entries(quizzes).forEach(([key, quiz]) => {
+        quiz.count = Math.min(Number(saved.quizzes?.[key]) || 0, 30);
       });
+      currentLevel = [1, 2, 3, 4, 5].find(level => !completedLevels.includes(level)) || 5;
+      if (profile.privileged && completedLevels.length === 0) currentLevel = 1;
+    }
 
-      document.body.addEventListener("click", (event) => {
-        const button = event.target.closest("button[data-action]");
-        if (!button) return;
+    function showApp(profile) {
+      learner = profile;
+      privilegedAccess = profile.privileged;
+      loadProgress(profile);
+      document.body.classList.remove("logged-out");
+      document.getElementById("auth-gate").hidden = true;
+      document.getElementById("account-label").textContent = `Hola, ${profile.name}`;
+      renderJourney();
+      renderVowelExercise();
+      chooseStory(0);
+      Object.keys(quizzes).forEach(updateMathQuestion);
+    }
 
-        const action = button.dataset.action;
-        if (action === "change-profile") {
-          resetProfile();
+    function tryLogin(name, email) {
+      const normalizedEmail = email.trim().toLocaleLowerCase("es");
+      const profile = { name: name.trim(), email: normalizedEmail, privileged: authorizedEmails.has(normalizedEmail) };
+      localStorage.setItem(profileKey, JSON.stringify(profile));
+      document.getElementById("auth-error").textContent = "";
+      showApp(profile);
+    }
+
+    function renderJourney() {
+      const map = document.getElementById("level-map");
+      map.innerHTML = levelNames.map((name, index) => {
+        const level = index + 1;
+        const highestUnlocked = Math.max(1, ...completedLevels.map(done => done + 1));
+        const unlocked = privilegedAccess || level <= highestUnlocked;
+        const completed = completedLevels.includes(level);
+        const emoji = ["🔤", "📖", "➕", "➖", "✖️"][index];
+        const status = completed ? "Completado ✓" : unlocked ? "Toca para empezar" : "🔒 Bloqueado";
+        return `<button type="button" class="level-card${completed ? " completed" : ""}${currentLevel === level ? " current" : ""}" data-go-level="${level}" ${unlocked ? "" : "disabled"}${currentLevel === level ? ' aria-current="step"' : ""} aria-label="Nivel ${level}: ${name}. ${status}"><span class="level-number">${emoji}</span><strong>Nivel ${level}: ${name}</strong><small>${status}</small></button>`;
+      }).join("");
+      map.querySelectorAll("[data-go-level]").forEach(button => button.addEventListener("click", () => {
+        currentLevel = Number(button.dataset.goLevel);
+        renderJourney();
+        document.getElementById(`nivel-${currentLevel}`).scrollIntoView({ behavior: "smooth", block: "start" });
+      }));
+      const count = completedLevels.length;
+      document.getElementById("journey-label").textContent = `${count} de 5 niveles completados`;
+      document.getElementById("journey-fill").style.width = `${count * 20}%`;
+      document.querySelector("#niveles .progress").setAttribute("aria-valuenow", String(count));
+      document.querySelectorAll(".level-section").forEach(section => {
+        const level = Number(section.dataset.level);
+        const unlocked = isLevelUnlocked(level);
+        section.classList.toggle("level-locked", !unlocked);
+        section.classList.toggle("active-level", level === currentLevel && unlocked);
+        section.querySelector(".level-lock").hidden = unlocked;
+      });
+      updateNextLevelButtons();
+      document.getElementById("diploma").hidden = completedLevels.length < 5;
+    }
+
+    function isLevelUnlocked(level) {
+      return privilegedAccess || level === 1 || completedLevels.includes(level - 1);
+    }
+
+    function completeLevel(level) {
+      if (completedLevels.includes(level) || !isLevelUnlocked(level) || !canAdvance(level)) return;
+      completedLevels.push(level);
+      completedLevels.sort((a, b) => a - b);
+      currentLevel = level < 5 ? level + 1 : 5;
+      saveProgress();
+      renderJourney();
+      if (level < 5) document.getElementById(`nivel-${currentLevel}`).scrollIntoView({ behavior: "smooth", block: "start" });
+      if (level === 5) document.getElementById("diploma").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function canAdvance(level) {
+      if (privilegedAccess) return true;
+      if (level === 1) return vowelIndex === vowelExercises.length;
+      if (level === 2) return completedStories.size === stories.length;
+      const key = { 3: "sum", 4: "subtract", 5: "multiply" }[level];
+      return Boolean(key && quizzes[key].count === 30);
+    }
+
+    function updateNextLevelButtons() {
+      document.querySelectorAll(".next-level").forEach(button => {
+        const level = Number(button.closest(".level-section").dataset.level);
+        const enabled = canAdvance(level);
+        button.disabled = !enabled;
+      });
+      document.getElementById("vowel-score").textContent = `Ejercicio ${Math.min(vowelIndex + 1, 30)} de 30`;
+      document.getElementById("vowel-fill").style.width = `${vowelIndex / 30 * 100}%`;
+      document.querySelector("#nivel-1 .exercise-progress .progress").setAttribute("aria-valuenow", String(vowelIndex));
+      document.getElementById("story-read-count").textContent = `${completedStories.size} de ${stories.length} cuentos completados`;
+      document.getElementById("story-count").textContent = `Cuento ${currentStory + 1} de ${stories.length}`;
+      document.getElementById("reading-feedback").textContent = completedStories.size === stories.length
+        ? "¡Leíste los 8 cuentos! Ya puedes ir al siguiente nivel."
+        : `Lee los 8 cuentos completos para continuar (${completedStories.size} de 8).`;
+      Object.entries(quizzes).forEach(([key, quiz]) => {
+        document.getElementById(`${key}-score`).textContent = `Ejercicio ${Math.min(quiz.count + 1, 30)} de 30`;
+        document.getElementById(`${key}-fill`).style.width = `${quiz.count / 30 * 100}%`;
+        document.querySelector(`[data-quiz="${key}"]`).closest(".math-practice").querySelector(".progress").setAttribute("aria-valuenow", String(quiz.count));
+      });
+      document.querySelectorAll(".story-choice").forEach((button, index) => button.classList.toggle("completed", completedStories.has(index)));
+      document.getElementById("diploma").hidden = completedLevels.length < 5;
+    }
+
+    function speak(text, onEnd) {
+      if (!synth) {
+        setReadingTip("Tu navegador no tiene audio de voz disponible. Prueba con Chrome, Edge o Safari.");
+        return;
+      }
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "es-ES";
+      utterance.rate = 0.82;
+      utterance.onend = () => { if (onEnd) onEnd(); };
+      utterance.onerror = () => setReadingTip("No se pudo reproducir el audio. Comprueba el sonido de tu dispositivo.");
+      synth.speak(utterance);
+    }
+
+    function setReadingTip(text) {
+      document.getElementById("reading-tip").textContent = text;
+    }
+
+    function makePhrases(text) {
+      const words = text.replace(/[—¡!¿?.,:;…“”"()]/g, " ").split(/\s+/).filter(Boolean);
+      const groups = [];
+      for (let i = 0; i < words.length; i += 3) groups.push(words.slice(i, i + 3).join(" "));
+      return groups;
+    }
+
+    function updateProgress() {
+      const percent = phrases.length ? Math.round(((phraseIndex + 1) / phrases.length) * 100) : 0;
+      document.getElementById("progress-label").textContent = `Frase ${phraseIndex + 1} de ${phrases.length}`;
+      document.getElementById("progress-fill").style.width = `${percent}%`;
+      document.querySelector(".progress").setAttribute("aria-valuenow", String(percent));
+      const activePhrase = phrases[phraseIndex];
+      const escaped = activePhrase
+        ? activePhrase.split(" ").map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s\\p{P}]+")
+        : "";
+      const text = stories[currentStory].text;
+      const match = escaped ? text.match(new RegExp(escaped, "iu")) : null;
+      document.getElementById("story-text").innerHTML = match
+        ? `${escapeHtml(text.slice(0, match.index))}<span class="read-highlight">${escapeHtml(match[0])}</span>${escapeHtml(text.slice(match.index + match[0].length))}`
+        : escapeHtml(text);
+      const nextButton = document.getElementById("next-button");
+      nextButton.disabled = readingComplete;
+      nextButton.textContent = readingComplete
+        ? "Lectura completa ✓"
+        : phraseIndex >= phrases.length - 1
+          ? "Terminar lectura ✓"
+          : "Siguiente frase →";
+      nextButton.style.opacity = readingComplete ? ".7" : "1";
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+    }
+
+    function chooseStory(index) {
+      currentStory = index;
+      phraseIndex = 0;
+      readingComplete = completedStories.has(index);
+      phrases = makePhrases(stories[index].text);
+      document.getElementById("story-title").textContent = stories[index].title;
+      document.querySelectorAll(".story-choice").forEach((button, buttonIndex) => {
+        button.classList.toggle("active", buttonIndex === index);
+        button.setAttribute("aria-pressed", String(buttonIndex === index));
+      });
+      updateProgress();
+      document.getElementById("next-story-button").hidden = !readingComplete;
+      updateReadingStatus();
+      setReadingTip(readingComplete
+        ? "¡Ya terminaste este cuento! Puedes elegir otro para seguir leyendo."
+        : "Pulsa «Escuchar y repetir»: Lúmina dirá tres palabras y después te invitará a repetir.");
+    }
+
+    document.getElementById("story-list").innerHTML = stories.map((story, index) =>
+      `<button type="button" class="story-choice${index === 0 ? " active" : ""}" aria-pressed="${index === 0}" data-story="${index}"><strong>${escapeHtml(story.title)}</strong><span>${escapeHtml(story.author)}</span></button>`
+    ).join("");
+    document.querySelectorAll(".story-choice").forEach(button => button.addEventListener("click", () => chooseStory(Number(button.dataset.story))));
+
+    function renderVowelExercise() {
+      const [word, missingIndex] = vowelExercises[vowelIndex] || vowelExercises[vowelExercises.length - 1];
+      document.getElementById("vowel-word").textContent = `${word.slice(0, missingIndex)}_${word.slice(missingIndex + 1)}`;
+      const answers = document.getElementById("vowel-answers");
+      answers.innerHTML = ["A", "E", "I", "O", "U"].map(vowel =>
+        `<button type="button" data-answer-vowel="${vowel}" aria-label="Responder ${vowel}">${vowel}</button>`
+      ).join("");
+      answers.querySelectorAll("[data-answer-vowel]").forEach(button => button.addEventListener("click", () => {
+        if (button.dataset.answerVowel.toLowerCase() === word[missingIndex]) {
+          vowelIndex = Math.min(vowelIndex + 1, vowelExercises.length);
+          document.getElementById("vowel-feedback").className = "quiz-feedback correct";
+          document.getElementById("vowel-feedback").textContent = vowelIndex === 30
+            ? "¡Excelente! Completaste los 30 ejercicios."
+            : "¡Correcto! Aquí viene la siguiente palabra.";
+          saveProgress();
+          renderVowelExercise();
+          updateNextLevelButtons();
+        } else {
+          document.getElementById("vowel-feedback").className = "quiz-feedback incorrect";
+          document.getElementById("vowel-feedback").textContent = "Esa no es. Escucha la palabra e inténtalo otra vez.";
+          speak(word);
         }
-        if (action === "logoff") {
-          logoff();
+      }));
+      updateNextLevelButtons();
+    }
+
+    function updateReadingStatus() {
+      updateNextLevelButtons();
+      document.getElementById("next-story-button").hidden = !completedStories.has(currentStory);
+    }
+
+    document.querySelectorAll(".vowel").forEach(button => button.addEventListener("click", () => {
+      const vowel = button.dataset.vowel;
+      document.querySelectorAll(".vowel").forEach(item => item.classList.toggle("active", item === button));
+      document.getElementById("vowel-description").innerHTML = `<strong>${vowel}</strong> — ${vowelExamples[vowel]}. ¡Escucha y repite!`;
+      speak(vowel);
+    }));
+    document.getElementById("vowels-audio").addEventListener("click", () => speak("A, E, I, O, U. Ahora repite: A, E, I, O, U."));
+    document.getElementById("syllables-audio").addEventListener("click", () => speak("Ma, me, mi, mo, mu. Ahora repite: ma, me, mi, mo, mu."));
+
+    document.getElementById("read-button").addEventListener("click", () => {
+      const phrase = phrases[phraseIndex];
+      setReadingTip(`Escucha: «${phrase}». Ahora repite en voz alta. Cuando estés lista o listo, pulsa «Siguiente frase».`);
+      speak(`${phrase}. Ahora repite.`);
+    });
+    document.getElementById("repeat-button").addEventListener("click", () => {
+      setReadingTip(`Vamos otra vez: «${phrases[phraseIndex]}». Escucha y repite.`);
+      speak(`${phrases[phraseIndex]}. Ahora repite.`);
+    });
+    document.getElementById("next-button").addEventListener("click", () => {
+      if (phraseIndex < phrases.length - 1) {
+        phraseIndex += 1;
+        updateProgress();
+        document.getElementById("read-button").focus();
+        setReadingTip(`¡Muy bien! Ahora escucha las siguientes tres palabras.`);
+      } else {
+        readingComplete = true;
+        completedStories.add(currentStory);
+        saveProgress();
+        updateProgress();
+        document.getElementById("next-story-button").hidden = false;
+        setReadingTip("¡Terminaste este cuento! Elige el siguiente cuento para continuar.");
+        updateReadingStatus();
+      }
+    });
+    document.getElementById("next-story-button").addEventListener("click", () => {
+      const nextIndex = stories.findIndex((story, index) => index > currentStory && !completedStories.has(index));
+      if (nextIndex !== -1) {
+        chooseStory(nextIndex);
+        document.querySelector(`#story-list [data-story="${nextIndex}"]`).scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else if (completedStories.size === stories.length) {
+        updateReadingStatus();
+        setReadingTip("¡Leíste los ocho cuentos! Ya puedes ir al siguiente nivel.");
+      }
+    });
+
+    const mathQuestionIds = {
+      sum: ["sum-question", "sum-answer", "sum-feedback"],
+      subtract: ["subtract-question", "subtract-answer", "subtract-feedback"],
+      multiply: ["multiply-question", "multiply-answer", "multiply-feedback"]
+    };
+
+    function updateMathQuestion(key) {
+      const quiz = quizzes[key];
+      const [questionId, inputId] = mathQuestionIds[key];
+      const operator = key === "subtract" ? "−" : key === "multiply" ? "×" : "+";
+      document.getElementById(questionId).textContent = `¿Cuánto es ${quiz.left} ${operator} ${quiz.right}?`;
+      document.getElementById(inputId).value = "";
+    }
+
+    function createMathQuestion(key) {
+      const quiz = quizzes[key];
+      if (key === "sum") {
+        quiz.left = Math.floor(Math.random() * 4) + 1;
+        quiz.right = Math.floor(Math.random() * 5) + 1;
+      } else if (key === "subtract") {
+        quiz.left = Math.floor(Math.random() * 8) + 2;
+        quiz.right = Math.floor(Math.random() * quiz.left) + 1;
+      } else {
+        quiz.left = Math.floor(Math.random() * 4) + 1;
+        quiz.right = Math.floor(Math.random() * 4) + 1;
+      }
+      updateMathQuestion(key);
+    }
+
+    document.querySelectorAll(".answer-form").forEach(form => form.addEventListener("submit", event => {
+      event.preventDefault();
+      const key = form.dataset.quiz;
+      const quiz = quizzes[key];
+      const [, inputId, feedbackId] = mathQuestionIds[key];
+      const input = document.getElementById(inputId);
+      const feedback = document.getElementById(feedbackId);
+      if (input.value.trim() === "" || !Number.isFinite(Number(input.value))) {
+        feedback.className = "quiz-feedback incorrect";
+        feedback.textContent = "Escribe tu respuesta para comprobarla.";
+        input.focus();
+        return;
+      }
+      const answer = Number(input.value);
+      const expected = key === "sum"
+        ? quiz.left + quiz.right
+        : key === "subtract"
+          ? quiz.left - quiz.right
+          : quiz.left * quiz.right;
+      if (answer !== expected) {
+        feedback.className = "quiz-feedback incorrect";
+        feedback.textContent = "Esa respuesta no es correcta. Vuelve a contar e inténtalo otra vez.";
+        input.select();
+        return;
+      }
+      quiz.count = Math.min(quiz.count + 1, 30);
+      feedback.className = "quiz-feedback correct";
+      feedback.textContent = quiz.count === 30
+        ? "¡Excelente! Completaste los 30 ejercicios. Pulsa el botón para ir al siguiente nivel."
+        : "¡Correcto! Aquí viene el siguiente ejercicio.";
+      createMathQuestion(key);
+      saveProgress();
+      updateNextLevelButtons();
+    }));
+
+    document.querySelectorAll(".next-level").forEach(button => button.addEventListener("click", () => {
+      const level = Number(button.closest(".level-section").dataset.level);
+      if (canAdvance(level)) completeLevel(level);
+    }));
+
+    document.getElementById("auth-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const name = document.getElementById("learner-name-entry").value.trim();
+      const email = document.getElementById("learner-email-entry").value.trim();
+      if (!name || !email) {
+        document.getElementById("auth-error").textContent = "Escribe tu nombre y tu correo.";
+        return;
+      }
+      tryLogin(name, email);
+    });
+    document.getElementById("logout-button").addEventListener("click", () => {
+      localStorage.removeItem(profileKey);
+      learner = null;
+      privilegedAccess = false;
+      document.body.classList.add("logged-out");
+      document.getElementById("auth-gate").hidden = false;
+      document.getElementById("auth-form").reset();
+      document.getElementById("auth-error").textContent = "";
+      window.scrollTo({ top: 0 });
+      document.getElementById("learner-name-entry").focus();
+    });
+
+    document.getElementById("print-diploma").addEventListener("click", () => window.print());
+
+    document.getElementById("learner-name").addEventListener("input", event => {
+      event.target.setAttribute("value", event.target.value);
+      if (learner) learner.name = event.target.value.trim() || learner.name;
+      document.getElementById("account-label").textContent = `Hola, ${learner.name}`;
+      if (learner) localStorage.setItem(profileKey, JSON.stringify(learner));
+    });
+
+    document.body.classList.add("logged-out");
+    let storedProfile = null;
+    try {
+      storedProfile = JSON.parse(localStorage.getItem(profileKey) || "null");
+    } catch (error) {
+      localStorage.removeItem(profileKey);
+    }
+    if (storedProfile && typeof storedProfile.name === "string" && typeof storedProfile.email === "string") {
+      storedProfile.privileged = authorizedEmails.has(storedProfile.email.toLocaleLowerCase("es"));
+      showApp(storedProfile);
+    } else {
+      localStorage.removeItem(profileKey);
+      document.getElementById("learner-name-entry").focus();
+    }
+
+    const chatMessages = document.getElementById("chat-messages");
+    function addMessage(text, isUser) {
+      const message = document.createElement("div");
+      message.className = `message${isUser ? " user" : ""}`;
+      message.textContent = text;
+      chatMessages.append(message);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    function answerQuestion(question) {
+      const q = question.toLocaleLowerCase("es");
+      let answer;
+      if (/(vocal|letra|sonido|a,e|a e)/i.test(q)) {
+        answer = "Las vocales son A, E, I, O y U. Sirven para formar sílabas y palabras. Por ejemplo, con la M podemos decir ma, me, mi, mo y mu. ¡Toca una vocal para escucharla!";
+      } else if (/(zapato|mateo|caracol)/i.test(q)) {
+        answer = "Mateo perdió un zapato rojo en el parque. Un caracol lo encontró y lo usó como casa, pero después encontró una hoja para vivir.";
+      } else if (/(lina|liebre|tortuga|carrera)/i.test(q)) {
+        answer = "Lina era una tortuga tranquila. Aunque no corría tan rápido como la liebre, siguió avanzando y llegó al final del camino.";
+      } else if (/(bruno|erizo|pelota|conejo)/i.test(q)) {
+        answer = "Bruno quería jugar con los conejos. Sus amigos lo cubrieron con hojas suaves para que pudiera jugar con la pelota sin pincharla.";
+      } else if (/(leo|pez|alas|volar)/i.test(q)) {
+        answer = "Leo era un pez que soñaba con volar. Una hoja lo llevó un poquito por el aire y él descubrió que podía imaginar aventuras.";
+      } else if (/(árbol|arbol|viento|tormenta)/i.test(q)) {
+        answer = "El árbol aprendió a bailar con el viento. Cuando llegó la tormenta, pudo doblarse sin romperse y el viento lo ayudó.";
+      } else if (/(vanesa|paraguas|flores)/i.test(q)) {
+        answer = "Vanesa convirtió su paraguas amarillo en una sombrilla y lo llenó de flores. Así encontró una nueva forma de usarlo.";
+      } else if (/(clara|globo|estrella)/i.test(q)) {
+        answer = "El globo de Clara voló hasta perderse entre las nubes. Por la noche, Clara vio una estrella brillante y pensó en su amigo.";
+      } else if (/(sofía|sofia|cometa|pajarito)/i.test(q)) {
+        answer = "El viento se llevó la cometa de Sofía. Un pajarito la encontró y ayudó a Sofía a recuperarla.";
+      } else if (/(repet|leer|frase|palabra)/i.test(q)) {
+        answer = "En la historia, pulsa «Escuchar y repetir». Diré tres palabras y luego diré «Ahora repite». Después puedes avanzar a la siguiente frase.";
+      } else {
+        answer = "¡Buena pregunta! Puedo ayudarte con las vocales y con las historias de Mateo, Lina, Bruno, Leo, el árbol, Vanesa, Clara y Sofía. ¿Sobre cuál quieres saber?";
+      }
+      addMessage(answer, false);
+      speak(answer);
+    }
+    document.getElementById("chat-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const input = document.getElementById("chat-input");
+      const question = input.value.trim();
+      if (!question) return;
+      addMessage(question, true);
+      input.value = "";
+      answerQuestion(question);
+    });
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const voiceButton = document.getElementById("voice-question");
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = "es-ES";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onstart = () => { document.getElementById("voice-status").textContent = "Te escucho… Puedes hacer tu pregunta."; voiceButton.textContent = "🎙️ Te estoy escuchando…"; };
+      recognition.onresult = event => {
+        const question = event.results[0][0].transcript;
+        addMessage(question, true);
+        answerQuestion(question);
+      };
+      recognition.onerror = event => {
+        const message = event.error === "not-allowed"
+          ? "No se dio permiso para usar el micrófono. Puedes escribir tu pregunta."
+          : "No pude escuchar bien. Inténtalo de nuevo o escribe tu pregunta.";
+        document.getElementById("voice-status").textContent = message;
+      };
+      recognition.onend = () => { voiceButton.textContent = "🎙️ Hablar con Lúmina"; if (document.getElementById("voice-status").textContent === "Te escucho… Puedes hacer tu pregunta.") document.getElementById("voice-status").textContent = "El micrófono requiere permiso. También puedes escribir."; };
+      voiceButton.addEventListener("click", () => {
+        try {
+          recognition.start();
+        } catch (error) {
+          document.getElementById("voice-status").textContent = "El micrófono ya está activo. Termina tu pregunta.";
         }
       });
-
-      confirmCreateBtn.addEventListener("click", confirmModalAction);
-      cancelCreateBtn.addEventListener("click", closeModal);
-      modalEl.addEventListener("click", (event) => {
-        if (event.target === modalEl) closeModal();
+    } else {
+      voiceButton.addEventListener("click", () => {
+        document.getElementById("voice-status").textContent = "El reconocimiento de voz no está disponible en este navegador. Puedes escribir tu pregunta.";
+        document.getElementById("chat-input").focus();
       });
-      modalInputEl.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") confirmModalAction();
-      });
-
-      window.addEventListener("load", loadStateFromFirebase);
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>
