@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fff8ee">
+  <meta name="theme-color" content="#f7f8fb">
   <title>Lumina — Un mundo para leer</title>
   <style>
     :root {
@@ -11,7 +11,7 @@
       --ink: #253344;
       --muted: #728094;
       --paper: #fffdf9;
-      --cream: #fff8ee;
+      --cream: #f7f8fb;
       --purple: #7857d5;
       --purple-dark: #5e3dbb;
       --peach: #ffb889;
@@ -22,7 +22,7 @@
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      background: var(--cream);
+      background: linear-gradient(145deg, #f8f7ff 0%, #f2f8f8 52%, #fff7f1 100%) fixed;
       color: var(--ink);
       font-family: ui-rounded, "Trebuchet MS", Arial, sans-serif;
       line-height: 1.55;
@@ -42,9 +42,11 @@
       backdrop-filter: blur(12px);
     }
     .account-actions { display: flex; align-items: center; gap: 10px; }
+    .storage-warning { padding: 8px 14px; border: 1px solid #ead69e; border-radius: 12px; background: #fff8df; color: #725c1d; font-size: .88rem; font-weight: 700; }
+    .storage-warning[hidden] { display: none; }
     .account-label { color: var(--muted); font-size: .82rem; font-weight: 700; }
     .account-button { padding: 7px 11px; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--purple-dark); font-size: .8rem; font-weight: 800; }
-    .auth-gate { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 20px; background: radial-gradient(circle at top left, #eee8ff, transparent 50%), var(--cream); }
+    .auth-gate { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 20px; background: radial-gradient(circle at top left, #eee8ff, transparent 50%), linear-gradient(145deg, #f8f7ff, #f2f8f8 60%, #fff7f1); }
     .auth-gate[hidden] { display: none; }
     .auth-card { width: min(100%, 450px); padding: clamp(25px, 6vw, 42px); border: 1px solid var(--line); border-radius: 26px; background: var(--paper); box-shadow: var(--shadow); }
     .auth-card h1 { margin-bottom: 8px; font-size: 2rem; }
@@ -57,9 +59,11 @@
     .auth-note { margin: 14px 0 0; color: #8a93a1; font-size: .76rem; }
     .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-size: 1.2rem; font-weight: 900; letter-spacing: -.04em; }
     .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px; background: #eee8ff; font-size: 1.35rem; }
-    .nav { display: flex; gap: 8px; }
+    .nav { display: flex; align-items: center; gap: 8px; }
     .nav a { padding: 9px 13px; color: #596579; text-decoration: none; border-radius: 12px; font-size: .92rem; font-weight: 700; }
     .nav a:hover { background: #f4f0e9; color: var(--purple-dark); }
+    .nav button { padding: 9px 13px; border: 0; border-radius: 12px; background: transparent; color: #596579; font-weight: 800; }
+    .nav button:hover, .nav button[aria-expanded="true"] { background: #f4f0e9; color: var(--purple-dark); }
     .page { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
     .hero {
       display: grid;
@@ -107,6 +111,7 @@
     .section-heading p { margin-bottom: 0; color: var(--muted); }
     .lesson-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     .card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 8px 25px rgba(69, 54, 38, .04); }
+    .card.neon-edge { border-color: rgba(255, 62, 100, .45); box-shadow: 0 0 0 1px rgba(255, 62, 100, .13), 0 0 18px rgba(255, 62, 100, .12), 0 8px 25px rgba(69, 54, 38, .04); }
     .lesson-card { padding: 22px; }
     .lesson-card h3 { margin-bottom: 8px; font-size: 1.15rem; }
     .lesson-card p { color: #687487; }
@@ -147,7 +152,7 @@
     .progress { flex: 1; height: 8px; overflow: hidden; border-radius: 9px; background: #eeeaf4; }
     .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--purple); transition: width .2s; }
     .tip { margin: 14px 0 0; color: var(--muted); font-size: .86rem; }
-    .journey-section { position: sticky; top: 64px; z-index: 4; padding: 12px 0; background: var(--cream); }
+    .journey-section { position: relative; z-index: 4; padding: 12px 0; background: transparent; }
     .journey-section .section-heading { margin-bottom: 10px; }
     .journey-section .section-heading h2 { font-size: 1.4rem; }
     .journey-section .section-heading p:not(.eyebrow) { display: none; }
@@ -175,8 +180,10 @@
     .video-card { display: grid; grid-template-columns: .8fr 1.2fr; align-items: center; gap: 20px; margin-top: 18px; padding: 22px; }
     .video-card h3 { margin-bottom: 8px; }
     .video-card p:last-child { margin-bottom: 0; color: var(--muted); }
-    .video-frame { position: relative; width: 100%; overflow: hidden; padding-top: 56.25%; border-radius: 16px; background: #eee8ff; }
+    .video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 16px; background: #dfeaff; }
     .video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .video-open-link { position: absolute; right: 10px; bottom: 10px; z-index: 1; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.94); color: var(--purple-dark); font-size: .8rem; font-weight: 800; text-decoration: none; }
+    .video-open-link:hover { background: white; text-decoration: underline; }
     .level-finish { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 17px; background: var(--paper); }
     .level-feedback { color: var(--muted); font-size: .9rem; }
     .finish-level:disabled { cursor: not-allowed; opacity: .5; transform: none; }
@@ -216,6 +223,61 @@
     .story-choice.completed { border-color: #b9dfc4; background: #f1fbf3; }
     .story-choice.completed span::after { content: " · Leído ✓"; color: #367e4f; font-weight: 900; }
     .math-question-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .voxel-game { overflow: hidden; margin-top: 18px; border-color: rgba(255, 62, 100, .4); box-shadow: 0 0 0 1px rgba(255, 62, 100, .1), 0 0 18px rgba(255, 62, 100, .1), 0 8px 25px rgba(69, 54, 38, .04); }
+    .voxel-game:fullscreen { display: flex; width: 100vw; height: 100vh; flex-direction: column; margin: 0; overflow: auto; border: 0; border-radius: 0; background: var(--paper); }
+    .voxel-game:fullscreen .voxel-viewport { min-height: 0; flex: 1; height: auto; }
+    .voxel-game-info { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; padding: 20px; }
+    .voxel-game-info h3 { margin-bottom: 5px; font-size: clamp(1.3rem, 3vw, 1.8rem); }
+    .voxel-game-info p { margin-bottom: 0; color: #687487; }
+    .voxel-score { padding: 9px 13px; border-radius: 14px; background: #eaf6ed; color: #28613a; font-weight: 900; white-space: nowrap; }
+    .voxel-viewport { position: relative; height: clamp(320px, 48vw, 470px); overflow: hidden; background: #a9d5ff; cursor: crosshair; touch-action: none; }
+    .voxel-canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+    .voxel-hotbar { position: absolute; z-index: 2; bottom: 16px; left: 50%; display: grid; grid-template-columns: repeat(9, 48px); gap: 3px; padding: 5px; border: 2px solid rgba(28, 28, 28, .8); border-radius: 5px; background: rgba(30, 30, 30, .68); transform: translateX(-50%); }
+    .voxel-inventory-slot { display: grid; width: 48px; height: 48px; padding: 4px; place-items: center; border: 2px solid rgba(205, 205, 205, .48); border-radius: 2px; background: rgba(75, 75, 75, .78); cursor: pointer; }
+    .voxel-inventory-slot.selected { border: 3px solid #fff; background: rgba(135, 135, 135, .82); box-shadow: 0 0 5px rgba(255, 255, 255, .75); }
+    .voxel-inventory-slot img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+    .voxel-block-icon { width: 29px; height: 29px; border: 2px solid rgba(255,255,255,.35); box-shadow: inset 2px 2px rgba(255,255,255,.22), inset -2px -2px rgba(0,0,0,.2); }
+    .voxel-block-icon-1 { background: linear-gradient(#57913a 0 28%, #765234 28%); }
+    .voxel-block-icon-2 { background: #805a39; }
+    .voxel-block-icon-3 { background: #858985; }
+    .voxel-block-icon-4 { background: #d8c58a; }
+    .voxel-tool-icon { color: #d7e4ee; font-size: 27px; line-height: 1; }
+    .voxel-item-icon { color: #e6c99f; font-size: 25px; line-height: 1; text-shadow: 1px 2px #392719; }
+    .voxel-slot-count { position: absolute; right: 2px; bottom: 0; color: white; font-size: 11px; font-weight: 900; text-shadow: 1px 1px #111; }
+    .voxel-inventory-slot { position: relative; }
+    .voxel-weather-display { position: absolute; z-index: 2; top: 12px; left: 12px; padding: 7px 11px; border: 1px solid rgba(255,255,255,.72); border-radius: 10px; background: rgba(25, 43, 58, .58); color: white; font-size: .78rem; font-weight: 800; text-shadow: 0 1px 2px #253344; pointer-events: none; }
+    .voxel-resources-display { position: absolute; z-index: 2; top: 48px; left: 12px; max-width: min(78%, 620px); padding: 6px 9px; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(25,43,58,.58); color: white; font-size: .68rem; font-weight: 800; line-height: 1.45; text-shadow: 0 1px 2px #253344; pointer-events: none; }
+    .voxel-rain { position: absolute; z-index: 1; inset: -40% -10%; display: none; background-image: repeating-linear-gradient(105deg, transparent 0 24px, rgba(229,243,255,.58) 25px, transparent 27px 48px); background-size: 54px 100px; pointer-events: none; }
+    .voxel-rain.active { display: block; animation: voxel-rain-fall .34s linear infinite; }
+    .voxel-viewport.lightning::after { position: absolute; z-index: 2; inset: 0; background: rgba(239, 248, 255, .85); content: ""; pointer-events: none; animation: voxel-lightning .19s ease-out forwards; }
+    @keyframes voxel-rain-fall { to { transform: translate(-12px, 100px); } }
+    @keyframes voxel-lightning { 0% { opacity: 0; } 12% { opacity: 1; } 34% { opacity: .12; } 56% { opacity: .85; } 100% { opacity: 0; } }
+    .voxel-hand-item { position: absolute; z-index: 1; right: 8%; bottom: 70px; width: clamp(78px, 13vw, 145px); height: clamp(78px, 13vw, 145px); object-fit: contain; image-rendering: pixelated; filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, .55)); transform: rotate(-18deg); transform-origin: 75% 80%; pointer-events: none; }
+    .voxel-hand-item[hidden] { display: none; }
+    .voxel-hand-pickaxe { position: absolute; z-index: 1; right: 10%; bottom: 78px; color: #e1e9f0; font-size: clamp(75px, 12vw, 132px); line-height: 1; filter: drop-shadow(3px 4px 2px rgba(0,0,0,.65)); transform: rotate(-28deg); pointer-events: none; }
+    .voxel-hand-pickaxe[hidden] { display: none; }
+    .voxel-tree-label { position: absolute; z-index: 1; padding: 5px 9px; border: 2px solid rgba(255,255,255,.9); border-radius: 9px; background: rgba(35,48,35,.88); color: white; font-size: 1rem; font-weight: 900; text-shadow: 0 1px 2px #000; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap; }
+    .voxel-tree-label[hidden] { display: none; }
+    .voxel-crosshair { position: absolute; top: 50%; left: 50%; color: #fff; font-size: 25px; font-weight: 900; line-height: 18px; text-shadow: 0 1px 4px #1f3328; pointer-events: none; transform: translate(-50%, -50%); }
+    .voxel-hud { position: absolute; right: 12px; bottom: 12px; left: 12px; display: flex; justify-content: center; pointer-events: none; }
+    .voxel-feedback { max-width: min(90%, 600px); min-height: 40px; margin: 0; padding: 9px 13px; border: 1px solid rgba(255,255,255,.6); border-radius: 12px; background: rgba(255,255,255,.92); color: #526273; font-weight: 800; text-align: center; }
+    .voxel-feedback.correct { color: #28613a; }
+    .voxel-feedback.incorrect { color: #a24737; }
+    .voxel-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 18px 18px; }
+    .voxel-craft-panel { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 7px; padding: 10px; border: 1px solid #d9e4d5; border-radius: 12px; background: #f4f8ef; }
+    .voxel-craft-panel[hidden] { display: none; }
+    .voxel-craft-panel strong { grid-column: 1 / -1; color: #315d38; }
+    .voxel-craft-panel button { padding: 9px; border: 1px solid #d6dfcc; border-radius: 8px; background: white; color: #354637; text-align: left; }
+    .voxel-craft-panel button:disabled { opacity: .48; }
+    .voxel-controls[hidden], .voxel-controls .button[hidden] { display: none; }
+    .voxel-controls p { margin: 0; color: #687487; font-size: .9rem; }
+    .voxel-touch-controls { display: flex; flex-wrap: wrap; gap: 7px; }
+    .voxel-touch-controls button { min-width: 46px; min-height: 42px; padding: 7px 10px; border: 1px solid #d9e4d5; border-radius: 11px; background: #f8fbf4; color: #315d38; font-weight: 900; touch-action: none; }
+    .voxel-touch-controls button:active { background: #e4f2dd; }
+    .voxel-game:fullscreen .voxel-hotbar { bottom: 22px; grid-template-columns: repeat(9, 58px); }
+    .voxel-game:fullscreen .voxel-inventory-slot { width: 58px; height: 58px; }
+    .voxel-game:fullscreen .voxel-hand-item { bottom: 92px; }
+    .voxel-game:fullscreen .voxel-hand-pickaxe { bottom: 100px; }
     @media print {
       body { background: white; }
       .topbar, .hero, .journey-section, .level-section, .lumina-section, footer, #print-diploma { display: none !important; }
@@ -259,7 +321,7 @@
     @media (max-width: 430px) {
       .page { width: min(100% - 26px, 1160px); }
       .brand { font-size: 1rem; } .brand-mark { width: 33px; height: 33px; }
-      .nav a { font-size: .73rem; padding: 7px 6px; }
+      .nav a, .nav button { font-size: .73rem; padding: 7px 6px; }
       .vowels { gap: 6px; } .vowel { min-height: 73px; font-size: 1.8rem; }
       .story-list { grid-template-columns: 1fr 1fr; padding: 8px; }
       .story-choice strong { font-size: .87rem; }
@@ -268,6 +330,15 @@
       .answer-form { flex-wrap: wrap; }
       .answer-form input { width: 100%; flex: 1 0 100%; }
       .answer-form .button { width: 100%; }
+      .voxel-game-info { grid-template-columns: 1fr; gap: 8px; }
+      .voxel-score { justify-self: start; }
+      .voxel-viewport { height: 62vh; min-height: 300px; max-height: 430px; }
+      .voxel-controls { align-items: stretch; }
+      .voxel-controls > p { width: 100%; }
+      .voxel-touch-controls { justify-content: center; }
+      .voxel-hotbar { bottom: 10px; grid-template-columns: repeat(9, min(8.2vw, 38px)); gap: 2px; padding: 4px; }
+      .voxel-inventory-slot { width: min(8.2vw, 38px); height: min(8.2vw, 38px); padding: 2px; }
+      .voxel-hand-item { right: 2%; bottom: 54px; width: 84px; height: 84px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -293,11 +364,12 @@
   <header class="topbar">
     <a class="brand" href="#inicio" aria-label="Lumina, ir al inicio"><span class="brand-mark" aria-hidden="true">✨</span> lumina</a>
     <nav class="nav" aria-label="Navegación principal">
-      <a href="#niveles">Mis niveles</a>
+      <button id="levels-toggle" type="button" aria-expanded="false" aria-controls="level-panel">Mis niveles</button>
       <a href="#pregunta">Pregúntame</a>
     </nav>
     <div class="account-actions"><span class="account-label" id="account-label"></span><button class="account-button" id="logout-button" type="button">Cambiar cuenta</button></div>
   </header>
+  <p class="storage-warning" id="storage-warning" hidden role="status"></p>
 
   <main class="page">
     <section class="hero" id="inicio">
@@ -305,7 +377,7 @@
         <p class="eyebrow">Un ratito para aprender</p>
         <h1>Leer es una aventura. <span style="color:var(--purple)">¡Vamos juntos!</span></h1>
         <p class="hero-copy">Practica las vocales, escucha palabras y descubre historias bonitas. Lúmina estará aquí para ayudarte cuando tengas dudas.</p>
-        <a class="button" href="#niveles">Ver mis niveles <span aria-hidden="true">→</span></a>
+        <button class="button" id="open-levels" type="button">Ver mis niveles <span aria-hidden="true">→</span></button>
       </div>
       <div class="hero-art" aria-hidden="true"><span class="sun"></span><span class="spark one">✦</span><span class="book">📖</span><span class="spark two">✧</span></div>
     </section>
@@ -314,8 +386,10 @@
       <div class="section-heading">
         <div><p class="eyebrow">Tu camino de aprendizaje</p><h2>¡Cinco niveles para lograrlo!</h2><p>Completa cada nivel para desbloquear el siguiente. Al final recibirás tu diploma.</p></div>
       </div>
-      <div class="level-map" id="level-map" aria-label="Niveles de aprendizaje"></div>
-      <div class="journey-progress"><span id="journey-label">0 de 5 niveles completados</span><div class="progress" role="progressbar" aria-label="Progreso de niveles" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><div class="progress-fill" id="journey-fill"></div></div></div>
+      <div id="level-panel" hidden>
+        <div class="level-map" id="level-map" aria-label="Niveles de aprendizaje"></div>
+        <div class="journey-progress"><span id="journey-label">0 de 5 niveles completados</span><div class="progress" role="progressbar" aria-label="Progreso de niveles" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><div class="progress-fill" id="journey-fill"></div></div></div>
+      </div>
     </section>
 
     <section class="section level-section" id="nivel-1" data-level="1">
@@ -325,7 +399,7 @@
       <div class="level-lock" hidden>🔒 Primero completa el nivel anterior para entrar.</div>
       <div class="level-content">
       <div class="lesson-grid">
-        <article class="card lesson-card">
+        <article class="card lesson-card neon-edge">
           <h3>Toca una vocal para escucharla</h3>
           <p>Las vocales son sonidos que podemos decir dejando salir el aire sin cerrar la boca.</p>
           <div class="vowels" role="group" aria-label="Escucha las vocales">
@@ -347,13 +421,18 @@
       </div>
       <article class="card video-card">
         <div><p class="eyebrow">Mira y aprende</p><h3>Las vocales también se aprenden cantando</h3><p>Disfruta este video y luego toca cada vocal para practicar.</p></div>
-        <div class="video-frame"><iframe src="https://www.youtube.com/embed/I90UCweAZdU?si=DrwZ6dculNvd-aQW" title="Video para aprender las vocales" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>
+        <div class="video-frame"><iframe src="https://www.youtube-nocookie.com/embed/I90UCweAZdU?rel=0" title="Video para aprender las vocales" width="560" height="315" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="origin-when-cross-origin" allowfullscreen loading="eager"></iframe><a class="video-open-link" href="https://www.youtube.com/watch?v=I90UCweAZdU" target="_blank" rel="noopener noreferrer">Abrir video en YouTube ↗</a></div>
       </article>
       <article class="card lesson-card vowel-test">
         <h3>Prueba de vocales · 30 ejercicios</h3>
         <p>Completa la vocal que falta en cada palabra. ¡Puedes repetir si te equivocas!</p>
         <div class="exercise-progress"><span id="vowel-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de ejercicios de vocales" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="vowel-fill"></div></div></div>
         <div class="vowel-exercise"><p id="vowel-question">¿Qué vocal falta?</p><div class="vowel-word" id="vowel-word">c_sa</div><div class="vowel-answers" id="vowel-answers" role="group" aria-label="Elige la vocal que falta"></div><p class="quiz-feedback" id="vowel-feedback" aria-live="polite">¡Elige la vocal que completa la palabra!</p></div>
+      </article>
+      <article class="card voxel-game" data-voxel-game="vowels">
+        <div class="voxel-game-info"><div><p class="eyebrow">Minijuego 3D · Vocales</p><h3 data-game-question></h3><p>Encuentra la vocal que falta y tala el árbol con esa letra.</p></div><span class="voxel-score" data-game-score>Árboles correctos: 0</span></div>
+        <div class="voxel-viewport" aria-label="Bosque de bloques 3D de vocales"><canvas class="voxel-canvas" tabindex="0" aria-label="WASD mover, mouse mirar, espacio saltar, Shift agacharse y clic talar"></canvas><span class="voxel-crosshair" aria-hidden="true">+</span><div class="voxel-hud"><p class="voxel-feedback" data-game-feedback aria-live="polite">Haz clic aquí para mirar con el mouse. Usa WASD para moverte.</p></div></div>
+        <div class="voxel-controls"><p>WASD mover · mouse mirar · espacio saltar · Shift agacharse · Ctrl correr · clic talar</p><div class="voxel-touch-controls"><button type="button" data-turn="-1" aria-label="Mirar a la izquierda">↶</button><button type="button" data-move="1" aria-label="Avanzar">▲</button><button type="button" data-move="-1" aria-label="Retroceder">▼</button><button type="button" data-turn="1" aria-label="Mirar a la derecha">↷</button><button type="button" data-jump aria-label="Saltar">⤴</button><button type="button" data-crouch aria-label="Agacharse">⇩</button><button type="button" data-action="chop">🪓 Talar</button><button class="button" type="button" data-action="next" hidden>Siguiente pregunta →</button></div></div>
       </article>
       <div class="level-finish"><span class="level-feedback" id="vowels-level-feedback">Resuelve los 30 ejercicios para continuar.</span><button class="button next-level" data-next-level="2" type="button" disabled>Ir al nivel 2: Lectura →</button></div>
       </div>
@@ -391,8 +470,13 @@
       <div class="level-content">
         <div class="math-grid">
           <article class="card math-lesson"><span class="math-emoji">🍎 + 🍎</span><h3>Sumar paso a paso</h3><ol><li>Mira el primer número.</li><li>Cuenta el segundo número después de él.</li><li>El número donde terminas es el total.</li></ol><div class="worked-example"><strong>Ejemplo: 2 + 3</strong><span>Empieza en 2 y cuenta 3 más: 3, 4, 5. Entonces, <b>2 + 3 = 5</b>.</span></div></article>
-          <article class="card math-practice"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="sum-question">¿Cuánto es 2 + 1?</h3><p id="sum-hint">Puedes usar los dedos para contar. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="sum"><label class="sr-only" for="sum-answer">Tu respuesta para la suma</label><input id="sum-answer" type="number" min="0" max="30" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="sum-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de sumas" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="sum-fill"></div></div></div><p class="quiz-feedback" id="sum-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
+          <article class="card math-practice neon-edge"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="sum-question">¿Cuánto es 2 + 1?</h3><p id="sum-hint">Puedes usar los dedos para contar. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="sum"><label class="sr-only" for="sum-answer">Tu respuesta para la suma</label><input id="sum-answer" type="number" min="0" max="30" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="sum-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de sumas" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="sum-fill"></div></div></div><p class="quiz-feedback" id="sum-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
         </div>
+        <article class="card voxel-game" data-voxel-game="sum">
+          <div class="voxel-game-info"><div><p class="eyebrow">Minijuego 3D · Sumas</p><h3 data-game-question></h3><p>Resuelve la suma y tala el árbol que tiene el resultado.</p></div><span class="voxel-score" data-game-score>Árboles correctos: 0</span></div>
+          <div class="voxel-viewport" aria-label="Bosque de bloques 3D de sumas"><canvas class="voxel-canvas" tabindex="0" aria-label="WASD mover, mouse mirar, espacio saltar, Shift agacharse y clic talar"></canvas><span class="voxel-crosshair" aria-hidden="true">+</span><div class="voxel-hud"><p class="voxel-feedback" data-game-feedback aria-live="polite">Haz clic aquí para mirar con el mouse. Usa WASD para moverte.</p></div></div>
+          <div class="voxel-controls"><p>W / ↑ avanzar · S / ↓ retroceder · mouse mirar · espacio saltar · Shift agacharse · clic talar</p><div class="voxel-touch-controls"><button type="button" data-turn="-1" aria-label="Mirar a la izquierda">↶</button><button type="button" data-move="1" aria-label="Avanzar">▲</button><button type="button" data-move="-1" aria-label="Retroceder">▼</button><button type="button" data-turn="1" aria-label="Mirar a la derecha">↷</button><button type="button" data-jump aria-label="Saltar">⤴</button><button type="button" data-crouch aria-label="Agacharse">⇩</button><button type="button" data-action="chop">🪓 Talar</button><button class="button" type="button" data-action="next" hidden>Siguiente pregunta →</button></div></div>
+        </article>
         <div class="level-finish"><span class="level-feedback" id="sum-level-feedback">Resuelve los 30 ejercicios para continuar.</span><button class="button next-level" data-next-level="4" type="button" disabled>Ir al nivel 4: Restas →</button></div>
       </div>
     </section>
@@ -405,6 +489,11 @@
           <article class="card math-lesson"><span class="math-emoji">🍪 − 🍪</span><h3>Restar paso a paso</h3><ol><li>Empieza con la cantidad grande.</li><li>Cuenta hacia atrás el número que vas a quitar.</li><li>El número donde llegas es lo que queda.</li></ol><div class="worked-example"><strong>Ejemplo: 5 − 2</strong><span>Empieza en 5 y cuenta 2 hacia atrás: 4, 3. Entonces, <b>5 − 2 = 3</b>.</span></div></article>
           <article class="card math-practice"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="subtract-question">¿Cuánto es 3 − 1?</h3><p id="subtract-hint">Imagina que tienes objetos y quitas algunos. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="subtract"><label class="sr-only" for="subtract-answer">Tu respuesta para la resta</label><input id="subtract-answer" type="number" min="0" max="30" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="subtract-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de restas" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="subtract-fill"></div></div></div><p class="quiz-feedback" id="subtract-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
         </div>
+        <article class="card voxel-game" data-voxel-game="subtract">
+          <div class="voxel-game-info"><div><p class="eyebrow">Minijuego 3D · Restas</p><h3 data-game-question></h3><p>Resuelve la resta y tala el árbol que tiene el resultado.</p></div><span class="voxel-score" data-game-score>Árboles correctos: 0</span></div>
+          <div class="voxel-viewport" aria-label="Bosque de bloques 3D de restas"><canvas class="voxel-canvas" tabindex="0" aria-label="WASD mover, mouse mirar, espacio saltar, Shift agacharse y clic talar"></canvas><span class="voxel-crosshair" aria-hidden="true">+</span><div class="voxel-hud"><p class="voxel-feedback" data-game-feedback aria-live="polite">Haz clic aquí para mirar con el mouse. Usa WASD para moverte.</p></div></div>
+          <div class="voxel-controls"><p>W / ↑ avanzar · S / ↓ retroceder · mouse mirar · espacio saltar · Shift agacharse · clic talar</p><div class="voxel-touch-controls"><button type="button" data-turn="-1" aria-label="Mirar a la izquierda">↶</button><button type="button" data-move="1" aria-label="Avanzar">▲</button><button type="button" data-move="-1" aria-label="Retroceder">▼</button><button type="button" data-turn="1" aria-label="Mirar a la derecha">↷</button><button type="button" data-jump aria-label="Saltar">⤴</button><button type="button" data-crouch aria-label="Agacharse">⇩</button><button type="button" data-action="chop">🪓 Talar</button><button class="button" type="button" data-action="next" hidden>Siguiente pregunta →</button></div></div>
+        </article>
         <div class="level-finish"><span class="level-feedback" id="subtract-level-feedback">Resuelve los 30 ejercicios para continuar.</span><button class="button next-level" data-next-level="5" type="button" disabled>Ir al nivel 5: Multiplicaciones →</button></div>
       </div>
     </section>
@@ -417,6 +506,11 @@
           <article class="card math-lesson"><span class="math-emoji">⭐ ⭐ ⭐</span><h3>Multiplicar paso a paso</h3><ol><li>El primer número dice cuántos grupos tienes.</li><li>El segundo número dice cuántos hay en cada grupo.</li><li>Suma los grupos para encontrar el total.</li></ol><div class="worked-example"><strong>Ejemplo: 2 × 3</strong><span>Son 2 grupos de 3: 3 + 3. Entonces, <b>2 × 3 = 6</b>.</span></div></article>
           <article class="card math-practice"><p class="eyebrow">Prueba · 30 ejercicios</p><h3 id="multiply-question">¿Cuánto es 2 × 2?</h3><p id="multiply-hint">Multiplicar es sumar varias veces la misma cantidad. Una respuesta correcta te lleva al siguiente ejercicio.</p><form class="answer-form" data-quiz="multiply"><label class="sr-only" for="multiply-answer">Tu respuesta para la multiplicación</label><input id="multiply-answer" type="number" min="0" max="100" inputmode="numeric" placeholder="Tu respuesta"><button class="button" type="submit">Comprobar</button></form><div class="exercise-progress"><span id="multiply-score">Ejercicio 1 de 30</span><div class="progress" role="progressbar" aria-label="Progreso de multiplicaciones" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="progress-fill" id="multiply-fill"></div></div></div><p class="quiz-feedback" id="multiply-feedback" aria-live="polite">Resuelve los 30 ejercicios para avanzar.</p></article>
         </div>
+        <article class="card voxel-game" data-voxel-game="multiply">
+          <div class="voxel-game-info"><div><p class="eyebrow">Minijuego 3D · Multiplicaciones</p><h3 data-game-question></h3><p>Resuelve la multiplicación y tala el árbol que tiene el resultado.</p></div><span class="voxel-score" data-game-score>Árboles correctos: 0</span></div>
+          <div class="voxel-viewport" aria-label="Bosque de bloques 3D de multiplicaciones"><canvas class="voxel-canvas" tabindex="0" aria-label="WASD mover, mouse mirar, espacio saltar, Shift agacharse y clic talar"></canvas><span class="voxel-crosshair" aria-hidden="true">+</span><div class="voxel-hud"><p class="voxel-feedback" data-game-feedback aria-live="polite">Haz clic aquí para mirar con el mouse. Usa WASD para moverte.</p></div></div>
+          <div class="voxel-controls"><p>W / ↑ avanzar · S / ↓ retroceder · mouse mirar · espacio saltar · Shift agacharse · clic talar</p><div class="voxel-touch-controls"><button type="button" data-turn="-1" aria-label="Mirar a la izquierda">↶</button><button type="button" data-move="1" aria-label="Avanzar">▲</button><button type="button" data-move="-1" aria-label="Retroceder">▼</button><button type="button" data-turn="1" aria-label="Mirar a la derecha">↷</button><button type="button" data-jump aria-label="Saltar">⤴</button><button type="button" data-crouch aria-label="Agacharse">⇩</button><button type="button" data-action="chop">🪓 Talar</button><button class="button" type="button" data-action="next" hidden>Siguiente pregunta →</button></div></div>
+        </article>
         <div class="level-finish"><span class="level-feedback" id="multiply-level-feedback">Resuelve los 30 ejercicios para terminar el último nivel.</span></div>
       </div>
     </section>
@@ -582,6 +676,35 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
     const levelNames = ["Vocales", "Lectura", "Sumas", "Restas", "Multiplicaciones"];
     const progressKey = "lumina-learning-progress-v1";
     const profileKey = "lumina-learner-profile-v1";
+    function reportStorageIssue(message) {
+      const warning = document.getElementById("storage-warning");
+      warning.textContent = message;
+      warning.hidden = false;
+    }
+    function readStoredValue(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (error) {
+        reportStorageIssue("El almacenamiento del navegador está bloqueado. Puedes usar la página, pero el avance no se conservará al recargar.");
+        return null;
+      }
+    }
+    function writeStoredValue(key, value) {
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (error) {
+        reportStorageIssue("No se pudo guardar en este navegador. Puedes continuar, pero el avance no se conservará al recargar.");
+        return false;
+      }
+    }
+    function removeStoredValue(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        reportStorageIssue("No se pudieron limpiar datos guardados dañados. Puedes seguir usando la página.");
+      }
+    }
     const authorizedEmails = new Set([
       "agustinroberto261713@gmail.com",
       "cristobal.barrios.nu@liceoavb.cl",
@@ -612,7 +735,7 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
 
     function saveProgress() {
       if (!learner) return;
-      localStorage.setItem(`${progressKey}:${learner.email}`, JSON.stringify({
+      writeStoredValue(`${progressKey}:${learner.email}`, JSON.stringify({
         completed: completedLevels,
         stories: [...completedStories],
         vowelIndex,
@@ -623,9 +746,9 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
     function loadProgress(profile) {
       let saved = {};
       try {
-        saved = JSON.parse(localStorage.getItem(`${progressKey}:${profile.email}`) || "{}");
+        saved = JSON.parse(readStoredValue(`${progressKey}:${profile.email}`) || "{}");
       } catch (error) {
-        localStorage.removeItem(`${progressKey}:${profile.email}`);
+        removeStoredValue(`${progressKey}:${profile.email}`);
       }
       completedLevels = Array.isArray(saved.completed) ? saved.completed.filter(level => Number.isInteger(level) && level >= 1 && level <= 5) : [];
       completedStories.clear();
@@ -656,9 +779,9 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
     function tryLogin(name, email) {
       const normalizedEmail = email.trim().toLocaleLowerCase("es");
       const profile = { name: name.trim(), email: normalizedEmail, privileged: authorizedEmails.has(normalizedEmail) };
-      localStorage.setItem(profileKey, JSON.stringify(profile));
       document.getElementById("auth-error").textContent = "";
       showApp(profile);
+      writeStoredValue(profileKey, JSON.stringify(profile));
     }
 
     function renderJourney() {
@@ -817,6 +940,7 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
     function renderVowelExercise() {
       const [word, missingIndex] = vowelExercises[vowelIndex] || vowelExercises[vowelExercises.length - 1];
       document.getElementById("vowel-word").textContent = `${word.slice(0, missingIndex)}_${word.slice(missingIndex + 1)}`;
+      window.dispatchEvent(new CustomEvent("learning-question-change", { detail: { key: "vowels" } }));
       const answers = document.getElementById("vowel-answers");
       answers.innerHTML = ["A", "E", "I", "O", "U"].map(vowel =>
         `<button type="button" data-answer-vowel="${vowel}" aria-label="Responder ${vowel}">${vowel}</button>`
@@ -902,6 +1026,7 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
       const operator = key === "subtract" ? "−" : key === "multiply" ? "×" : "+";
       document.getElementById(questionId).textContent = `¿Cuánto es ${quiz.left} ${operator} ${quiz.right}?`;
       document.getElementById(inputId).value = "";
+      window.dispatchEvent(new CustomEvent("learning-question-change", { detail: { key } }));
     }
 
     function createMathQuestion(key) {
@@ -967,10 +1092,26 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
         document.getElementById("auth-error").textContent = "Escribe tu nombre y tu correo.";
         return;
       }
-      tryLogin(name, email);
+      try {
+        tryLogin(name, email);
+      } catch (error) {
+        document.getElementById("auth-error").textContent = "No se pudo abrir tu espacio. Recarga la página e inténtalo de nuevo.";
+        console.error("No se pudo completar el inicio de sesión:", error);
+      }
     });
+    const levelsToggle = document.getElementById("levels-toggle");
+    const levelPanel = document.getElementById("level-panel");
+    function setLevelsVisible(visible) {
+      levelPanel.hidden = !visible;
+      levelsToggle.setAttribute("aria-expanded", String(visible));
+      if (visible) {
+        document.getElementById("niveles").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+    levelsToggle.addEventListener("click", () => setLevelsVisible(levelPanel.hidden));
+    document.getElementById("open-levels").addEventListener("click", () => setLevelsVisible(true));
     document.getElementById("logout-button").addEventListener("click", () => {
-      localStorage.removeItem(profileKey);
+      removeStoredValue(profileKey);
       learner = null;
       privilegedAccess = false;
       document.body.classList.add("logged-out");
@@ -987,21 +1128,21 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
       event.target.setAttribute("value", event.target.value);
       if (learner) learner.name = event.target.value.trim() || learner.name;
       document.getElementById("account-label").textContent = `Hola, ${learner.name}`;
-      if (learner) localStorage.setItem(profileKey, JSON.stringify(learner));
+      if (learner) writeStoredValue(profileKey, JSON.stringify(learner));
     });
 
     document.body.classList.add("logged-out");
     let storedProfile = null;
     try {
-      storedProfile = JSON.parse(localStorage.getItem(profileKey) || "null");
+      storedProfile = JSON.parse(readStoredValue(profileKey) || "null");
     } catch (error) {
-      localStorage.removeItem(profileKey);
+      removeStoredValue(profileKey);
     }
     if (storedProfile && typeof storedProfile.name === "string" && typeof storedProfile.email === "string") {
       storedProfile.privileged = authorizedEmails.has(storedProfile.email.toLocaleLowerCase("es"));
       showApp(storedProfile);
     } else {
-      localStorage.removeItem(profileKey);
+      removeStoredValue(profileKey);
       document.getElementById("learner-name-entry").focus();
     }
 
@@ -1086,5 +1227,6 @@ Desde ese día, Sofía ató un lazo más fuerte y el pajarito siempre voló junt
       });
     }
   </script>
+  <script src="voxel-game.js"></script>
 </body>
 </html>
